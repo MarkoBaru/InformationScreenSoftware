@@ -20,21 +20,21 @@
   align-items: center;
   gap: 8px;
   padding: 14px 28px;
-  background: var(--primary);
-  color: white;
+  background: #e0e0e0;
+  color: #333;
   border: none;
   border-radius: 50px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(26, 115, 232, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   transition: background 0.2s, transform 0.2s;
   z-index: 101;
   font-family: inherit;
 }
 
 .content-viewer__back:hover {
-  background: var(--primary-dark);
+  background: #d0d0d0;
   transform: translateX(-50%) scale(1.05);
 }
 
