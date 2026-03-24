@@ -1,0 +1,35 @@
+.idle-static {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.idle-static__content {
+  max-width: 80%;
+  max-height: 80%;
+  overflow: hidden;
+}
+
+.idle-static__overlay {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 1.2rem;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
