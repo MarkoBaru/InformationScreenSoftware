@@ -1,0 +1,83 @@
+.rich-editor {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rich-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-bottom: 1px solid var(--border, #ddd);
+  align-items: center;
+}
+
+.rich-editor__toolbar button {
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #333;
+  line-height: 1.4;
+  min-width: 32px;
+  text-align: center;
+}
+
+.rich-editor__toolbar button:hover {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
+.rich-editor__separator {
+  width: 1px;
+  height: 20px;
+  background: #ccc;
+  margin: 0 4px;
+}
+
+.rich-editor__content {
+  min-height: 250px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
+  font-size: 1rem;
+  line-height: 1.7;
+  outline: none;
+}
+
+.rich-editor__content:empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  pointer-events: none;
+}
+
+.rich-editor__content h2 {
+  font-size: 1.5rem;
+  margin: 16px 0 8px;
+}
+
+.rich-editor__content h3 {
+  font-size: 1.25rem;
+  margin: 12px 0 6px;
+}
+
+.rich-editor__content p {
+  margin: 0 0 8px;
+}
+
+.rich-editor__content ul,
+.rich-editor__content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.rich-editor__content img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 8px 0;
+}
