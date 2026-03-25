@@ -112,6 +112,24 @@ export default function TileEditPage() {
     setShowMediaPicker(purpose)
   }
 
+  const handleMediaPickerUpload = async (file: File) => {
+    setUploading(true)
+    try {
+      const asset = await mediaApi.upload(file)
+      setMediaAssets(prev => [...prev, asset])
+      if (showMediaPicker === 'button') {
+        setImageUrl(asset.url)
+      } else if (showMediaPicker === 'article') {
+        setArticleBody(prev => prev + `<img src="${asset.url}" alt="${asset.fileName}" style="max-width:100%" />`)
+      }
+      setShowMediaPicker(null)
+    } catch (err) {
+      alert('Upload fehlgeschlagen: ' + (err as Error).message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const renderMediaPicker = () => {
     if (!showMediaPicker) return null
     const isImagePicker = showMediaPicker === 'button' || showMediaPicker === 'article'
@@ -123,7 +141,17 @@ export default function TileEditPage() {
         <div className="media-picker" onClick={(e) => e.stopPropagation()}>
           <div className="media-picker__header">
             <h3>{pickerTitle}</h3>
-            <button type="button" className="btn btn--small" onClick={() => setShowMediaPicker(null)}>Schließen</button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
+                {uploading ? 'Wird hochgeladen...' : 'Bild hochladen'}
+                <input
+                  type="file" accept="image/*" style={{ display: 'none' }}
+                  disabled={uploading}
+                  onChange={(e) => { if (e.target.files?.[0]) handleMediaPickerUpload(e.target.files[0]) }}
+                />
+              </label>
+              <button type="button" className="btn btn--small" onClick={() => setShowMediaPicker(null)}>Schließen</button>
+            </div>
           </div>
           <div className="media-picker__grid">
             {filtered.map((m) => (
@@ -145,7 +173,7 @@ export default function TileEditPage() {
             ))}
             {filtered.length === 0 && (
               <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-light)', padding: 24 }}>
-                Keine passenden Medien vorhanden. Laden Sie zuerst Dateien unter "Medien" hoch.
+                Keine Medien vorhanden – laden Sie ein Bild über den Button oben hoch.
               </p>
             )}
           </div>
