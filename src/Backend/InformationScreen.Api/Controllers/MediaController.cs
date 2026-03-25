@@ -24,6 +24,7 @@ public class MediaController : ControllerBase
             return NotFound();
 
         var stream = System.IO.File.OpenRead(asset.FilePath);
-        return File(stream, asset.MimeType, asset.FileName);
+        Response.Headers["Content-Disposition"] = $"inline; filename=\"{asset.FileName}\"";
+        return File(stream, asset.MimeType);
     }
 }

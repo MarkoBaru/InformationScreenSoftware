@@ -18,6 +18,7 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
             src={url || ''}
             controls
             autoPlay
+            loop
             style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
           />
         )
@@ -25,7 +26,7 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
         return (
           <iframe
             className="content-viewer__frame"
-            src={url || ''}
+            src={(url || '') + '#toolbar=0&navpanes=0'}
             title={title || 'PDF'}
           />
         )
