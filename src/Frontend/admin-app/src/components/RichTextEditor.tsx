@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import './RichTextEditor.css'
 
 interface RichTextEditorProps {
@@ -10,17 +10,40 @@ interface RichTextEditorProps {
 
 export default function RichTextEditor({ value, onChange, onInsertImage, placeholder }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
+  const lastHtmlRef = useRef<string>(value)
+  const isInitializedRef = useRef(false)
 
-  const exec = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value)
+  // Set initial content once on mount
+  useEffect(() => {
+    if (editorRef.current && !isInitializedRef.current && value) {
+      editorRef.current.innerHTML = value
+      lastHtmlRef.current = value
+      isInitializedRef.current = true
+    }
+  })
+
+  // Sync only external value changes (e.g. image insert from media picker)
+  useEffect(() => {
+    if (editorRef.current && value !== lastHtmlRef.current) {
+      lastHtmlRef.current = value
+      editorRef.current.innerHTML = value
+    }
+  }, [value])
+
+  const exec = useCallback((command: string, val?: string) => {
+    document.execCommand(command, false, val)
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML)
+      const html = editorRef.current.innerHTML
+      lastHtmlRef.current = html
+      onChange(html)
     }
   }, [onChange])
 
   const handleInput = () => {
     if (editorRef.current) {
-      onChange(editorRef.current.innerHTML)
+      const html = editorRef.current.innerHTML
+      lastHtmlRef.current = html
+      onChange(html)
     }
   }
 
@@ -71,7 +94,6 @@ export default function RichTextEditor({ value, onChange, onInsertImage, placeho
         className="rich-editor__content"
         contentEditable
         suppressContentEditableWarning
-        dangerouslySetInnerHTML={{ __html: value }}
         onInput={handleInput}
         onPaste={handlePaste}
         data-placeholder={placeholder || 'Schreiben Sie hier Ihren Beitrag...'}
