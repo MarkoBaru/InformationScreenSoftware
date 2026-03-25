@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { screensApi, tilesApi, TileList } from '../api'
 import './PageStyles.css'
@@ -19,7 +19,12 @@ export default function ScreenEditPage() {
   const [isActive, setIsActive] = useState(true)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [assignedTileIds, setAssignedTileIds] = useState<Set<number>>(new Set())
+  const [orderedTileIds, setOrderedTileIds] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
+
+  // Drag & drop state
+  const dragItem = useRef<number | null>(null)
+  const dragOverItem = useRef<number | null>(null)
 
   useEffect(() => {
     tilesApi.list().then(setAllTiles).catch(() => {})
@@ -29,7 +34,9 @@ export default function ScreenEditPage() {
         setSlug(s.slug)
         setIdleTimeoutSeconds(s.idleTimeoutSeconds)
         setIsActive(s.isActive)
-        setAssignedTileIds(new Set(s.tiles.map((t) => t.id)))
+        const tileIds = s.tiles.map((t) => t.id)
+        setAssignedTileIds(new Set(tileIds))
+        setOrderedTileIds(tileIds)
 
         // Map backend types to our UI mode
         if (s.defaultContentType === 'Static' && s.defaultContentData) {
@@ -60,8 +67,13 @@ export default function ScreenEditPage() {
   const toggleTile = (tileId: number) => {
     setAssignedTileIds((prev) => {
       const next = new Set(prev)
-      if (next.has(tileId)) next.delete(tileId)
-      else next.add(tileId)
+      if (next.has(tileId)) {
+        next.delete(tileId)
+        setOrderedTileIds((ids) => ids.filter((id) => id !== tileId))
+      } else {
+        next.add(tileId)
+        setOrderedTileIds((ids) => [...ids, tileId])
+      }
       return next
     })
   }
@@ -103,9 +115,9 @@ export default function ScreenEditPage() {
           defaultContentData,
           idleTimeoutSeconds,
         })
-        if (assignedTileIds.size > 0) {
+        if (orderedTileIds.length > 0) {
           await screensApi.updateTiles(screen.id,
-            Array.from(assignedTileIds).map((tileId) => ({ tileId }))
+            orderedTileIds.filter(tid => assignedTileIds.has(tid)).map((tileId, i) => ({ tileId, sortOrderOverride: i }))
           )
         }
       } else {
@@ -114,9 +126,8 @@ export default function ScreenEditPage() {
           defaultContentData,
           idleTimeoutSeconds, isActive,
         })
-        await screensApi.updateTiles(Number(id),
-          Array.from(assignedTileIds).map((tileId) => ({ tileId }))
-        )
+        const tileAssignments = orderedTileIds.filter(tid => assignedTileIds.has(tid)).map((tileId, i) => ({ tileId, sortOrderOverride: i }))
+        await screensApi.updateTiles(Number(id), tileAssignments)
       }
       navigate('/screens')
     } catch (err) {
@@ -127,6 +138,26 @@ export default function ScreenEditPage() {
   }
 
   const selectedTile = allTiles.find(t => String(t.id) === selectedTileId)
+
+  const handleDragStart = useCallback((index: number) => {
+    dragItem.current = index
+  }, [])
+
+  const handleDragEnter = useCallback((index: number) => {
+    dragOverItem.current = index
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    if (dragItem.current === null || dragOverItem.current === null) return
+    const items = [...orderedTileIds]
+    const [dragged] = items.splice(dragItem.current, 1)
+    items.splice(dragOverItem.current, 0, dragged)
+    setOrderedTileIds(items)
+    dragItem.current = null
+    dragOverItem.current = null
+  }, [orderedTileIds])
+
+  const assignedOrdered = orderedTileIds.filter((tid) => assignedTileIds.has(tid))
 
   return (
     <div className="page">
@@ -249,6 +280,40 @@ export default function ScreenEditPage() {
             </div>
           )}
         </div>
+
+        {assignedOrdered.length > 1 && (
+          <div className="form-group">
+            <label>Reihenfolge (Drag & Drop)</label>
+            <div className="sortable-list">
+              {assignedOrdered.map((tileId, index) => {
+                const tile = allTiles.find((t) => t.id === tileId)
+                if (!tile) return null
+                return (
+                  <div
+                    key={tileId}
+                    className="sortable-list__item"
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragEnter={() => handleDragEnter(index)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                  >
+                    <span className="sortable-list__handle">⠿</span>
+                    <span className="sortable-list__pos">{index + 1}</span>
+                    {tile.imageUrl && (
+                      <img src={tile.imageUrl} alt="" style={{ width: 36, height: 24, objectFit: 'cover', borderRadius: 3 }} />
+                    )}
+                    <span className="sortable-list__title">{tile.title}</span>
+                    {tile.categoryName && (
+                      <span className="badge badge--muted" style={{ marginLeft: 'auto' }}>{tile.categoryName}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            <p className="hint">Ziehen Sie die Einträge um die Reihenfolge für diesen Screen zu ändern</p>
+          </div>
+        )}
 
         <div className="form-actions">
           <button type="submit" className="btn btn--primary" disabled={saving}>
