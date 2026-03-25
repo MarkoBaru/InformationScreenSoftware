@@ -29,6 +29,24 @@
   color: var(--text);
 }
 
+.home-screen__categories {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 32px;
+}
+
+.home-screen__category-section {
+  margin-bottom: 8px;
+}
+
+.home-screen__category-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-light, #666);
+  padding: 8px 32px 0;
+  margin: 0;
+}
+
 .spinner {
   width: 48px;
   height: 48px;

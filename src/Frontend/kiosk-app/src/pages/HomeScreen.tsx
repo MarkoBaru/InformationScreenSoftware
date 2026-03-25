@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { TileData } from '../api'
 import { useScreenData } from '../hooks/useScreenData'
@@ -37,8 +37,8 @@ export default function HomeScreen() {
   useIdleTimer(screen?.idleTimeoutSeconds ?? 120, handleIdle)
 
   const handleTileClick = (tile: TileData) => {
-    // Articles always render inline (no URL needed)
-    if (tile.contentType === 'Article') {
+    // Articles and PDFs always render inline
+    if (tile.contentType === 'Article' || tile.contentType === 'Pdf') {
       setViewingTile(tile)
       return
     }
@@ -60,6 +60,24 @@ export default function HomeScreen() {
   const handleBack = () => {
     setViewingTile(null)
   }
+
+  // Group tiles by category
+  const groupedTiles = useMemo(() => {
+    if (!screen) return []
+    const groups: { name: string; tiles: typeof screen.tiles }[] = []
+    const catMap = new Map<string, typeof screen.tiles>()
+
+    for (const tile of screen.tiles) {
+      const catName = tile.categoryName || 'Allgemein'
+      if (!catMap.has(catName)) catMap.set(catName, [])
+      catMap.get(catName)!.push(tile)
+    }
+
+    for (const [name, tiles] of catMap) {
+      groups.push({ name, tiles })
+    }
+    return groups
+  }, [screen])
 
   if (loading) {
     return (
@@ -98,7 +116,14 @@ export default function HomeScreen() {
           <header className="home-screen__header">
             <h1>{screen.name}</h1>
           </header>
-          <TileGrid tiles={screen.tiles} onTileClick={handleTileClick} />
+          <div className="home-screen__categories">
+            {groupedTiles.map((group) => (
+              <section key={group.name} className="home-screen__category-section">
+                <h2 className="home-screen__category-title">{group.name}</h2>
+                <TileGrid tiles={group.tiles} onTileClick={handleTileClick} />
+              </section>
+            ))}
+          </div>
         </>
       )}
     </div>
