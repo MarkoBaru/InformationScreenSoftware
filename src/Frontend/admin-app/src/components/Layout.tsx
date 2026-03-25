@@ -35,6 +35,7 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+      <div className="dev-credit">Developed by Marko Barutcu</div>
     </div>
   )
 }

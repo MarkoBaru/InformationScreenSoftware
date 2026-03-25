@@ -4,11 +4,14 @@ import ContentScreen from './pages/ContentScreen'
 
 function App() {
   return (
-    <Routes>
-      <Route path="/:slug" element={<HomeScreen />} />
-      <Route path="/:slug/view" element={<ContentScreen />} />
-      <Route path="*" element={<HomeScreen />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/:slug" element={<HomeScreen />} />
+        <Route path="/:slug/view" element={<ContentScreen />} />
+        <Route path="*" element={<HomeScreen />} />
+      </Routes>
+      <div className="dev-credit">Developed by Marko Barutcu</div>
+    </>
   )
 }
 

@@ -64,3 +64,13 @@
   overflow-y: auto;
   padding: 32px;
 }
+
+.dev-credit {
+  position: fixed;
+  bottom: 8px;
+  right: 12px;
+  font-size: 0.7rem;
+  color: #ccc;
+  pointer-events: none;
+  z-index: 999;
+}
