@@ -9,6 +9,46 @@
   font-size: 1.5rem;
 }
 
+/* Filter Bar */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.filter-bar__search {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.filter-bar__search:focus {
+  border-color: var(--primary);
+}
+
+.filter-bar select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  font-size: 0.85rem;
+  background: white;
+  cursor: pointer;
+}
+
+.filter-bar select:focus {
+  border-color: var(--primary);
+}
+
 /* Media Picker Modal */
 .media-picker-overlay {
   position: fixed;
@@ -271,4 +311,59 @@
 
 .toggle-switch input {
   width: auto !important;
+}
+
+/* Sortable List (Drag & Drop) */
+.sortable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sortable-list__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: grab;
+  transition: background 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.sortable-list__item:hover {
+  background: #f0f0f0;
+}
+
+.sortable-list__item:active {
+  cursor: grabbing;
+  background: #e8f0fe;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.sortable-list__handle {
+  color: #aaa;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.sortable-list__pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sortable-list__title {
+  font-weight: 500;
+  font-size: 0.9rem;
 }

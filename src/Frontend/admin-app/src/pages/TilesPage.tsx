@@ -1,15 +1,42 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { tilesApi, TileList } from '../api'
+import { tilesApi, screensApi, categoriesApi, TileList, ScreenList, Category } from '../api'
 import './PageStyles.css'
 
 export default function TilesPage() {
   const [tiles, setTiles] = useState<TileList[]>([])
+  const [allScreens, setAllScreens] = useState<ScreenList[]>([])
+  const [allCategories, setAllCategories] = useState<Category[]>([])
   const navigate = useNavigate()
+
+  // Filters
+  const [search, setSearch] = useState('')
+  const [filterScreen, setFilterScreen] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
 
   useEffect(() => {
     tilesApi.list().then(setTiles).catch(() => {})
+    screensApi.list().then(setAllScreens).catch(() => {})
+    categoriesApi.list().then(setAllCategories).catch(() => {})
   }, [])
+
+  const filteredTiles = useMemo(() => {
+    return tiles.filter((t) => {
+      if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
+      if (filterScreen && !t.assignedScreens.includes(filterScreen)) return false
+      if (filterCategory) {
+        if (filterCategory === '__none__') {
+          if (t.categoryId !== null) return false
+        } else if (t.categoryName !== filterCategory) return false
+      }
+      if (filterType && t.contentType !== filterType) return false
+      if (filterStatus === 'active' && !t.isActive) return false
+      if (filterStatus === 'inactive' && t.isActive) return false
+      return true
+    })
+  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus])
 
   const handleDelete = async (id: number, title: string) => {
     if (!confirm(`Inhalt "${title}" wirklich löschen?`)) return
@@ -26,21 +53,56 @@ export default function TilesPage() {
         </button>
       </div>
 
-      {tiles.length === 0 ? (
+      <div className="filter-bar">
+        <input
+          className="filter-bar__search"
+          type="text"
+          placeholder="Suche nach Titel..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select value={filterScreen} onChange={(e) => setFilterScreen(e.target.value)}>
+          <option value="">Alle Screens</option>
+          {allScreens.map((s) => (
+            <option key={s.id} value={s.name}>{s.name}</option>
+          ))}
+        </select>
+        <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+          <option value="">Alle Kategorien</option>
+          <option value="__none__">Ohne Kategorie</option>
+          {allCategories.map((c) => (
+            <option key={c.id} value={c.name}>{c.name}</option>
+          ))}
+        </select>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <option value="">Alle Typen</option>
+          <option value="Link">Link</option>
+          <option value="Video">Video</option>
+          <option value="Pdf">PDF</option>
+          <option value="Article">Beitrag</option>
+        </select>
+        <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">Alle Status</option>
+          <option value="active">Aktiv</option>
+          <option value="inactive">Inaktiv</option>
+        </select>
+      </div>
+
+      {filteredTiles.length === 0 ? (
         <div className="empty-state">
-          <p>Noch keine Inhalte vorhanden.</p>
-          <Link to="/tiles/new" className="btn btn--primary">Ersten Inhalt erstellen</Link>
+          <p>{tiles.length === 0 ? 'Noch keine Inhalte vorhanden.' : 'Keine Inhalte für diesen Filter.'}</p>
+          {tiles.length === 0 && <Link to="/tiles/new" className="btn btn--primary">Ersten Inhalt erstellen</Link>}
         </div>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>Bild</th><th>Titel</th><th>Link</th>
+              <th>Bild</th><th>Titel</th><th>Typ</th><th>Kategorie</th>
               <th>Screens</th><th>Status</th><th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
-            {tiles.map((t) => (
+            {filteredTiles.map((t) => (
               <tr key={t.id}>
                 <td>
                   {t.imageUrl ? (
@@ -50,7 +112,12 @@ export default function TilesPage() {
                   )}
                 </td>
                 <td><Link to={`/tiles/${t.id}`}>{t.title}</Link></td>
-                <td><code>{(t.linkUrl || '').length > 40 ? (t.linkUrl || '').substring(0, 40) + '...' : (t.linkUrl || '—')}</code></td>
+                <td>
+                  <span className="badge badge--muted">
+                    {t.contentType === 'Article' ? 'Beitrag' : t.contentType}
+                  </span>
+                </td>
+                <td>{t.categoryName || '—'}</td>
                 <td>{t.assignedScreens.join(', ') || '—'}</td>
                 <td>
                   <span className={`badge ${t.isActive ? 'badge--success' : 'badge--muted'}`}>
