@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-MongoDB}
+      - MONGODB_CONNECTION=${MONGODB_CONNECTION:-mongodb://mongodb:27017}
+      - MONGODB_DATABASE=${MONGODB_DATABASE:-informationscreen}
+      - AzureBlobStorage__ConnectionString=${AZURE_BLOB_CONNECTION:-}
+      - AzureBlobStorage__ContainerName=${AZURE_BLOB_CONTAINER:-media}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost}
+      - JWT_KEY=${JWT_KEY:-InfoScreen-Default-SuperSecret-Key-Min32Chars!!}
+      - JWT_ISSUER=${JWT_ISSUER:-InformationScreen}
+    volumes:
+      - uploads:/app/Uploads
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "${APP_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  uploads:
+  mongo-data:
