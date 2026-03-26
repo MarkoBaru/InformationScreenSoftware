@@ -22,7 +22,7 @@ public class AdminMediaController : ControllerBase
 
     [HttpPost("upload")]
     [DisableRequestSizeLimit]
-    [RequestFormLimits(MultipartBodyLengthLimit = 200 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 1024L * 1024 * 1024)]
     public async Task<IActionResult> Upload(IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -38,9 +38,9 @@ public class AdminMediaController : ControllerBase
         if (!allowedTypes.Contains(file.ContentType))
             return BadRequest("File type not allowed.");
 
-        const long maxSize = 100 * 1024 * 1024; // 100MB
+        const long maxSize = 1024L * 1024 * 1024; // 1GB
         if (file.Length > maxSize)
-            return BadRequest("File too large. Maximum size is 100MB.");
+            return BadRequest($"Die Datei ist zu gross ({file.Length / 1024 / 1024} MB). Maximal erlaubt: 1 GB.");
 
         var asset = await _mediaService.UploadAsync(file);
         return Ok(asset);

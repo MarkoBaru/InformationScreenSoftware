@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   const handleTileClick = (tile: TileData) => {
     // Articles and PDFs always render inline
-    if (tile.contentType === 'Article' || tile.contentType === 'Pdf') {
+    if (tile.contentType === 'Article' || tile.contentType === 'Pdf' || tile.contentType === 'Schichtplan') {
       setViewingTile(tile)
       return
     }

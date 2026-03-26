@@ -1,8 +1,48 @@
 import './ContentViewer.css'
 
+const MONTH_MAPPING: Record<string, { sheet: string; item: string }> = {
+  Januar: { sheet: 'Jan', item: 'SchichtplanJan' },
+  Februar: { sheet: 'Feb', item: 'SchichtplanFeb' },
+  'März': { sheet: 'März', item: 'SchichtplanMärz' },
+  April: { sheet: 'April', item: 'SchichtplanApril' },
+  Mai: { sheet: 'Mai', item: 'SchichtplanMai' },
+  Juni: { sheet: 'Juni', item: 'SchichtplanJuni' },
+  Juli: { sheet: 'Juli', item: 'SchichtplanJuli' },
+  August: { sheet: 'Aug', item: 'SchichtplanAug' },
+  September: { sheet: 'Sept', item: 'SchichtplanSep' },
+  Oktober: { sheet: 'Okt', item: 'SchichtplanOkt' },
+  November: { sheet: 'Nov', item: 'SchichtplanNov' },
+  Dezember: { sheet: 'Dez', item: 'SchichtplanDez' },
+}
+
+const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+
+function resolveMonthName(monthMode: string): string {
+  if (monthMode === 'current') return MONTH_NAMES[new Date().getMonth()]
+  if (monthMode === 'next') return MONTH_NAMES[(new Date().getMonth() + 1) % 12]
+  if (monthMode === 'nextNext') return MONTH_NAMES[(new Date().getMonth() + 2) % 12]
+  return monthMode // fester Monatsname
+}
+
+function buildSchichtplanUrl(baseUrl: string, monthName: string): string {
+  const mapping = MONTH_MAPPING[monthName] || { sheet: monthName, item: 'Schichtplan' + monthName }
+  return baseUrl +
+    '&action=embedview' +
+    '&wdAllowInteractivity=False' +
+    "&ActiveCell='" + mapping.sheet + "'!E4" +
+    '&wdHideGridlines=True' +
+    '&wdHideHeaders=True' +
+    '&wdInConfigurator=True' +
+    '&wdInConfigurator=True' +
+    '&ed1JS=true' +
+    '&wdHideSheetTabs=True' +
+    '&Item=' + mapping.item +
+    '&wdHideHeaders=True'
+}
+
 interface ContentViewerProps {
   url?: string | null
-  contentType: 'Link' | 'Video' | 'Pdf' | 'Article'
+  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan'
   articleBody?: string | null
   title?: string
   onBack: () => void
@@ -40,6 +80,22 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
             />
           </div>
         )
+      case 'Schichtplan': {
+        try {
+          const cfg = JSON.parse(articleBody || '{}')
+          const monthName = resolveMonthName(cfg.monthMode || 'current')
+          const embedUrl = buildSchichtplanUrl(cfg.baseUrl || '', monthName)
+          return (
+            <iframe
+              className="content-viewer__frame"
+              src={embedUrl}
+              title={`Schichtplan ${monthName} ${cfg.year || ''}`}
+            />
+          )
+        } catch {
+          return <div style={{ padding: 48, textAlign: 'center' }}>Fehler: Ungültige Schichtplan-Konfiguration</div>
+        }
+      }
       default: // Link
         return (
           <iframe

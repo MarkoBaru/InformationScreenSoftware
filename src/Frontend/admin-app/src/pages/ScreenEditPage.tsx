@@ -159,6 +159,22 @@ export default function ScreenEditPage() {
 
   const assignedOrdered = orderedTileIds.filter((tid) => assignedTileIds.has(tid))
 
+  // Group assigned tiles by category for display (mirrors kiosk rendering)
+  const groupedAssigned = (() => {
+    const groups: { name: string; tileIds: number[] }[] = []
+    const catMap = new Map<string, number[]>()
+    for (const tid of assignedOrdered) {
+      const tile = allTiles.find((t) => t.id === tid)
+      const catName = tile?.categoryName || 'Allgemein'
+      if (!catMap.has(catName)) catMap.set(catName, [])
+      catMap.get(catName)!.push(tid)
+    }
+    for (const [name, tileIds] of catMap) {
+      groups.push({ name, tileIds })
+    }
+    return groups
+  })()
+
   return (
     <div className="page">
       <div className="page__header">
@@ -285,33 +301,42 @@ export default function ScreenEditPage() {
           <div className="form-group">
             <label>Reihenfolge (Drag & Drop)</label>
             <div className="sortable-list">
-              {assignedOrdered.map((tileId, index) => {
-                const tile = allTiles.find((t) => t.id === tileId)
-                if (!tile) return null
-                return (
-                  <div
-                    key={tileId}
-                    className="sortable-list__item"
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onDragEnter={() => handleDragEnter(index)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={(e) => e.preventDefault()}
-                  >
-                    <span className="sortable-list__handle">⠿</span>
-                    <span className="sortable-list__pos">{index + 1}</span>
-                    {tile.imageUrl && (
-                      <img src={tile.imageUrl} alt="" style={{ width: 36, height: 24, objectFit: 'cover', borderRadius: 3 }} />
-                    )}
-                    <span className="sortable-list__title">{tile.title}</span>
-                    {tile.categoryName && (
-                      <span className="badge badge--muted" style={{ marginLeft: 'auto' }}>{tile.categoryName}</span>
-                    )}
+              {groupedAssigned.map((group) => (
+                <div key={group.name}>
+                  <div style={{
+                    padding: '6px 12px', marginTop: 8, marginBottom: 4,
+                    background: '#f0f0f0', borderRadius: 6, fontWeight: 600,
+                    fontSize: '0.85rem', color: '#555'
+                  }}>
+                    {group.name}
                   </div>
-                )
-              })}
+                  {group.tileIds.map((tileId) => {
+                    const globalIndex = assignedOrdered.indexOf(tileId)
+                    const tile = allTiles.find((t) => t.id === tileId)
+                    if (!tile) return null
+                    return (
+                      <div
+                        key={tileId}
+                        className="sortable-list__item"
+                        draggable
+                        onDragStart={() => handleDragStart(globalIndex)}
+                        onDragEnter={() => handleDragEnter(globalIndex)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => e.preventDefault()}
+                      >
+                        <span className="sortable-list__handle">&#x2807;</span>
+                        <span className="sortable-list__pos">{globalIndex + 1}</span>
+                        {tile.imageUrl && (
+                          <img src={tile.imageUrl} alt="" style={{ width: 36, height: 24, objectFit: 'cover', borderRadius: 3 }} />
+                        )}
+                        <span className="sortable-list__title">{tile.title}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
-            <p className="hint">Ziehen Sie die Einträge um die Reihenfolge für diesen Screen zu ändern</p>
+            <p className="hint">Tiles sind nach Kategorien gruppiert — so wie im Kiosk angezeigt. Ziehen Sie Einträge um die Reihenfolge innerhalb einer Kategorie zu ändern.</p>
           </div>
         )}
 

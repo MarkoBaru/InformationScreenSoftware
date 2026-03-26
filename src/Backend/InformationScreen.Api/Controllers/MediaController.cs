@@ -23,8 +23,9 @@ public class MediaController : ControllerBase
         if (!System.IO.File.Exists(asset.FilePath))
             return NotFound();
 
-        var stream = System.IO.File.OpenRead(asset.FilePath);
-        Response.Headers["Content-Disposition"] = $"inline; filename=\"{asset.FileName}\"";
-        return File(stream, asset.MimeType);
+        // ASCII-safe filename for header, UTF-8 filename* for modern browsers
+        var safeFileName = new string(asset.FileName.Select(c => c > 127 ? '_' : c).ToArray());
+        Response.Headers["Content-Disposition"] = $"inline; filename=\"{safeFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(asset.FileName)}";
+        return PhysicalFile(asset.FilePath, asset.MimeType, enableRangeProcessing: true);
     }
 }

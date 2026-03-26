@@ -69,7 +69,18 @@ public class MediaService
         if (asset == null) return false;
 
         if (File.Exists(asset.FilePath))
-            File.Delete(asset.FilePath);
+        {
+            try
+            {
+                File.Delete(asset.FilePath);
+            }
+            catch (IOException)
+            {
+                // Datei ist noch gesperrt – kurz warten und nochmal versuchen
+                await Task.Delay(200);
+                try { File.Delete(asset.FilePath); } catch (IOException) { /* Datei bleibt übrig, DB-Eintrag wird trotzdem entfernt */ }
+            }
+        }
 
         _db.MediaAssets.Remove(asset);
         await _db.SaveChangesAsync();

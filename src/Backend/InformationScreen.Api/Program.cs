@@ -4,10 +4,10 @@ using InformationScreen.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Allow large file uploads (videos up to 200MB)
+// Allow large file uploads (videos up to 1GB)
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 200 * 1024 * 1024;
+    options.Limits.MaxRequestBodySize = 1024L * 1024 * 1024;
 });
 
 // Database

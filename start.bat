@@ -7,6 +7,16 @@ echo   InformationScreen Software - Start
 echo ============================================
 echo.
 
+:: Alte Prozesse auf unseren Ports beenden
+echo Pruefe auf bereits laufende Instanzen...
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr "LISTENING" ^| findstr ":5001 :5173 :5174"') do (
+    if %%a NEQ 0 (
+        taskkill /PID %%a /F >nul 2>&1
+    )
+)
+echo Alte Prozesse bereinigt.
+echo.
+
 :: Backend Dependencies
 echo [1/3] Backend vorbereiten...
 cd /d "%~dp0src\Backend\InformationScreen.Api"

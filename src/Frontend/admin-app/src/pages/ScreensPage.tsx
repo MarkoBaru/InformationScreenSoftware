@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { screensApi, ScreenList } from '../api'
+import { screensApi, tilesApi, mediaApi, ScreenList, TileList } from '../api'
 import './PageStyles.css'
 
 export default function ScreensPage() {
   const [screens, setScreens] = useState<ScreenList[]>([])
+  const [tiles, setTiles] = useState<TileList[]>([])
+  const [mediaCount, setMediaCount] = useState(0)
   const navigate = useNavigate()
 
   // Filters
@@ -13,6 +15,8 @@ export default function ScreensPage() {
 
   useEffect(() => {
     screensApi.list().then(setScreens).catch(() => {})
+    tilesApi.list().then(setTiles).catch(() => {})
+    mediaApi.list().then((m) => setMediaCount(m.length)).catch(() => {})
   }, [])
 
   const filteredScreens = useMemo(() => {
@@ -32,6 +36,25 @@ export default function ScreensPage() {
 
   return (
     <div className="page">
+      <div className="stats-grid">
+        <Link to="/screens" className="stat-card">
+          <div className="stat-card__number">{screens.length}</div>
+          <div className="stat-card__label">Screens</div>
+        </Link>
+        <Link to="/tiles" className="stat-card">
+          <div className="stat-card__number">{tiles.length}</div>
+          <div className="stat-card__label">Inhalte</div>
+        </Link>
+        <Link to="/media" className="stat-card">
+          <div className="stat-card__number">{mediaCount}</div>
+          <div className="stat-card__label">Medien</div>
+        </Link>
+        <div className="stat-card">
+          <div className="stat-card__number">{tiles.filter(t => t.isActive).length}</div>
+          <div className="stat-card__label">Aktive Inhalte</div>
+        </div>
+      </div>
+
       <div className="page__header">
         <h1>Screens</h1>
         <button className="btn btn--primary" onClick={() => navigate('/screens/new')}>

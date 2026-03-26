@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
 import ScreensPage from './pages/ScreensPage'
 import ScreenEditPage from './pages/ScreenEditPage'
 import TilesPage from './pages/TilesPage'
@@ -12,8 +11,8 @@ function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/screens" element={<ScreensPage />} />
+        <Route path="/" element={<ScreensPage />} />
+        <Route path="/screens" element={<Navigate to="/" replace />} />
         <Route path="/screens/new" element={<ScreenEditPage />} />
         <Route path="/screens/:id" element={<ScreenEditPage />} />
         <Route path="/tiles" element={<TilesPage />} />

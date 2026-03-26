@@ -8,6 +8,18 @@ echo "  InformationScreen Software - Start"
 echo "============================================"
 echo ""
 
+# Alte Prozesse auf unseren Ports beenden
+echo "Prüfe auf bereits laufende Instanzen..."
+for port in 5001 5173 5174; do
+    pid=$(lsof -ti :$port 2>/dev/null)
+    if [ -n "$pid" ]; then
+        echo "  Beende Prozess auf Port $port (PID $pid)..."
+        kill $pid 2>/dev/null || true
+    fi
+done
+echo "Alte Prozesse bereinigt."
+echo ""
+
 # Backend Dependencies
 echo "[1/3] Backend vorbereiten..."
 cd "$SCRIPT_DIR/src/Backend/InformationScreen.Api"

@@ -4,7 +4,7 @@ import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, Me
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
-type ContentType = 'Link' | 'Video' | 'Pdf' | 'Article'
+type ContentType = 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan'
 
 export default function TileEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +29,11 @@ export default function TileEditPage() {
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Schichtplan-spezifische Felder
+  const [spBaseUrl, setSpBaseUrl] = useState('https://abb.sharepoint.com/teams/CHCMC-Produktion9/_layouts/15/Doc.aspx?sourcedoc={DOCUMENT-ID}')
+  const [spYear, setSpYear] = useState(new Date().getFullYear().toString())
+  const [spMonthMode, setSpMonthMode] = useState<string>('current')
+
   useEffect(() => {
     screensApi.list().then(setAllScreens).catch(() => {})
     categoriesApi.list().then(setAllCategories).catch(() => {})
@@ -42,6 +47,15 @@ export default function TileEditPage() {
         setLinkUrl(t.linkUrl || '')
         setLinkTarget(t.linkTarget)
         setArticleBody(t.articleBody || '')
+        // Schichtplan-Config aus articleBody laden
+        if (t.contentType === 'Schichtplan' && t.articleBody) {
+          try {
+            const cfg = JSON.parse(t.articleBody)
+            setSpBaseUrl(cfg.baseUrl || '')
+            setSpYear(cfg.year || new Date().getFullYear().toString())
+            setSpMonthMode(cfg.monthMode || 'current')
+          } catch { /* ignore parse errors */ }
+        }
         setSortOrder(t.sortOrder)
         setIsActive(t.isActive)
         setCategoryId(t.categoryId ?? '')
@@ -67,6 +81,11 @@ export default function TileEditPage() {
   }
 
   const handleFileUpload = async (file: File) => {
+    const maxSize = 1024 * 1024 * 1024 // 1 GB
+    if (file.size > maxSize) {
+      alert(`Die Datei "${file.name}" ist zu gross (${(file.size / 1024 / 1024).toFixed(0)} MB).\nMaximal erlaubt: 1 GB.`)
+      return
+    }
     setUploading(true)
     try {
       const asset = await mediaApi.upload(file)
@@ -83,13 +102,17 @@ export default function TileEditPage() {
     setSaving(true)
 
     try {
+      const schichtplanConfig = contentType === 'Schichtplan'
+        ? JSON.stringify({ baseUrl: spBaseUrl, year: spYear, monthMode: spMonthMode })
+        : undefined
+
       const data = {
         title, description: description || undefined,
         imageUrl: imageUrl || undefined,
-        linkUrl: (contentType === 'Article') ? undefined : (linkUrl || undefined),
+        linkUrl: (contentType === 'Article' || contentType === 'Schichtplan') ? undefined : (linkUrl || undefined),
         linkTarget,
         contentType,
-        articleBody: contentType === 'Article' ? articleBody : undefined,
+        articleBody: contentType === 'Article' ? articleBody : (contentType === 'Schichtplan' ? schichtplanConfig : undefined),
         sortOrder, categoryId: categoryId === '' ? undefined : categoryId,
         screenIds: Array.from(screenIds),
       }
@@ -113,6 +136,11 @@ export default function TileEditPage() {
   }
 
   const handleMediaPickerUpload = async (file: File) => {
+    const maxSize = 1024 * 1024 * 1024 // 1 GB
+    if (file.size > maxSize) {
+      alert(`Die Datei "${file.name}" ist zu gross (${(file.size / 1024 / 1024).toFixed(0)} MB).\nMaximal erlaubt: 1 GB.`)
+      return
+    }
     setUploading(true)
     try {
       const asset = await mediaApi.upload(file)
@@ -150,6 +178,7 @@ export default function TileEditPage() {
                   onChange={(e) => { if (e.target.files?.[0]) handleMediaPickerUpload(e.target.files[0]) }}
                 />
               </label>
+              <span style={{ fontSize: '0.75rem', color: '#888' }}>Max. 1 GB</span>
               <button type="button" className="btn btn--small" onClick={() => setShowMediaPicker(null)}>Schließen</button>
             </div>
           </div>
@@ -198,6 +227,7 @@ export default function TileEditPage() {
               ['Video', 'Video'],
               ['Pdf', 'PDF'],
               ['Article', 'Beitrag'],
+              ['Schichtplan', 'Schichtplan'],
             ] as [ContentType, string][]).map(([val, label]) => (
               <label key={val} style={{
                 display: 'flex', alignItems: 'center', gap: 4,
@@ -283,6 +313,7 @@ export default function TileEditPage() {
                 />
               </label>
             </div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Max. 1 GB · Formate: MP4, WebM, OGG</p>
           </div>
         )}
 
@@ -301,6 +332,7 @@ export default function TileEditPage() {
                 />
               </label>
             </div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Max. 1 GB · Format: PDF</p>
             {linkUrl && (
               <p className="hint" style={{ marginTop: 4 }}>Aktuell: {linkUrl}</p>
             )}
@@ -318,6 +350,55 @@ export default function TileEditPage() {
               placeholder="Schreiben Sie hier Ihren Beitrag..."
             />
           </div>
+        )}
+
+        {/* SCHICHTPLAN */}
+        {contentType === 'Schichtplan' && (
+          <>
+            <div className="form-group">
+              <label>SharePoint Dokument-URL</label>
+              <input
+                value={spBaseUrl}
+                onChange={(e) => setSpBaseUrl(e.target.value)}
+                required
+                placeholder="https://abb.sharepoint.com/teams/.../Doc.aspx?sourcedoc={...}"
+              />
+              <p className="hint" style={{ marginTop: 4 }}>
+                Die URL findest du in SharePoint unter Einbetten/Embed. Der Teil bis inkl. sourcedoc=&#123;...&#125;
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label>Jahr</label>
+              <input
+                value={spYear}
+                onChange={(e) => setSpYear(e.target.value)}
+                required
+                placeholder="2025"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Monatsanzeige</label>
+              <select value={spMonthMode} onChange={(e) => setSpMonthMode(e.target.value)}>
+                <option value="current">Aktueller Monat</option>
+                <option value="next">Nächster Monat</option>
+                <option value="nextNext">Übernächster Monat</option>
+                <option value="Januar">Januar</option>
+                <option value="Februar">Februar</option>
+                <option value="März">März</option>
+                <option value="April">April</option>
+                <option value="Mai">Mai</option>
+                <option value="Juni">Juni</option>
+                <option value="Juli">Juli</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="Oktober">Oktober</option>
+                <option value="November">November</option>
+                <option value="Dezember">Dezember</option>
+              </select>
+            </div>
+          </>
         )}
 
         {/* Common fields continued */}

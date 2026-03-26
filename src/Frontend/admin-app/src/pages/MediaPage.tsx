@@ -16,6 +16,14 @@ export default function MediaPage() {
     const files = e.target.files
     if (!files?.length) return
 
+    const maxSize = 1024 * 1024 * 1024 // 1 GB
+    const tooLarge = Array.from(files).filter(f => f.size > maxSize)
+    if (tooLarge.length > 0) {
+      alert(`Folgende Dateien sind zu gross (max. 1 GB):\n${tooLarge.map(f => `• ${f.name} (${(f.size / 1024 / 1024).toFixed(0)} MB)`).join('\n')}`)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setUploading(true)
     try {
       for (const file of Array.from(files)) {
@@ -46,18 +54,21 @@ export default function MediaPage() {
     <div className="page">
       <div className="page__header">
         <h1>Medien</h1>
-        <label className="btn btn--primary" style={{ cursor: 'pointer' }}>
-          {uploading ? 'Wird hochgeladen...' : '+ Datei hochladen'}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            multiple
-            onChange={handleUpload}
-            style={{ display: 'none' }}
-            disabled={uploading}
-          />
-        </label>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <label className="btn btn--primary" style={{ cursor: 'pointer' }}>
+            {uploading ? 'Wird hochgeladen...' : '+ Datei hochladen'}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*,application/pdf"
+              multiple
+              onChange={handleUpload}
+              style={{ display: 'none' }}
+              disabled={uploading}
+            />
+          </label>
+          <span style={{ fontSize: '0.75rem', color: '#888' }}>Max. 1 GB · Bilder, Videos, PDF</span>
+        </div>
       </div>
 
       {media.length === 0 ? (

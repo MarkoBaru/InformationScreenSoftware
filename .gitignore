@@ -30,3 +30,6 @@ Desktop.ini
 .env
 .env.local
 .env.*.local
+
+# Integration (contains separate git repos)
+Integration/
