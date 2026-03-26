@@ -13,11 +13,14 @@ Die App besteht aus 3 Containern:
 
 - [Azure CLI](https://learn.microsoft.com/de-de/cli/azure/install-azure-cli-windows) installiert
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installiert
-- Azure-Abo aktiv
+- Azure-Abo aktiv (Subscription: `ABB-APP-NMG-PROD-APM0012632-01`)
 
 ```powershell
 # Azure CLI anmelden
 az login
+
+# Richtige Subscription auswählen
+az account set --subscription "ABB-APP-NMG-PROD-APM0012632-01"
 ```
 
 ---
@@ -27,7 +30,7 @@ az login
 ### 1.1 Ressourcengruppe
 
 ```powershell
-$RESOURCE_GROUP = "rg-informationscreen"
+$RESOURCE_GROUP = "CHCMC-Production"
 $LOCATION = "westeurope"
 
 az group create --name $RESOURCE_GROUP --location $LOCATION
@@ -38,7 +41,7 @@ az group create --name $RESOURCE_GROUP --location $LOCATION
 > Das ist die Datenbank, die du im Azure Portal unter "Azure DocumentDB (with MongoDB compatibility)" erstellen kannst – oder per CLI:
 
 ```powershell
-$COSMOS_ACCOUNT = "cosmos-infoscreen"   # muss global einzigartig sein
+$COSMOS_ACCOUNT = "cosmos-chcmc-infoscreen"   # muss global einzigartig sein
 
 az cosmosdb create `
   --name $COSMOS_ACCOUNT `
@@ -61,7 +64,7 @@ az cosmosdb keys list `
 ### 1.3 Azure Blob Storage (für Medien-Uploads)
 
 ```powershell
-$STORAGE_ACCOUNT = "stinfoscreenmedia"   # muss global einzigartig sein, nur Kleinbuchstaben/Zahlen
+$STORAGE_ACCOUNT = "stchcmcinfoscreenmedia"   # muss global einzigartig sein, nur Kleinbuchstaben/Zahlen
 
 az storage account create `
   --name $STORAGE_ACCOUNT `
@@ -87,7 +90,7 @@ az storage account show-connection-string `
 ### 1.4 Azure Container Registry (für Docker-Images)
 
 ```powershell
-$ACR_NAME = "acrinfoscreen"   # muss global einzigartig sein
+$ACR_NAME = "acrchcmcinfoscreen"   # muss global einzigartig sein
 
 az acr create `
   --name $ACR_NAME `
@@ -107,9 +110,9 @@ Trage die Connection Strings aus Schritt 1 in deine `.env` ein:
 
 ```env
 DATABASE_PROVIDER=MongoDB
-MONGODB_CONNECTION=mongodb://cosmos-infoscreen:DEIN_KEY@cosmos-infoscreen.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@cosmos-infoscreen@
+MONGODB_CONNECTION=mongodb://cosmos-chcmc-infoscreen:DEIN_KEY@cosmos-chcmc-infoscreen.mongo.cosmos.azure.com:10255/?ssl=true&retrywrites=false&maxIdleTimeMS=120000&appName=@cosmos-chcmc-infoscreen@
 MONGODB_DATABASE=informationscreen
-AZURE_BLOB_CONNECTION=DefaultEndpointsProtocol=https;AccountName=stinfoscreenmedia;AccountKey=DEIN_KEY;EndpointSuffix=core.windows.net
+AZURE_BLOB_CONNECTION=DefaultEndpointsProtocol=https;AccountName=stchcmcinfoscreenmedia;AccountKey=DEIN_KEY;EndpointSuffix=core.windows.net
 AZURE_BLOB_CONTAINER=media
 ALLOWED_ORIGINS=https://deine-app-url.azurewebsites.net
 JWT_KEY=DEIN_SICHERER_ZUFAELLIGER_KEY_MIN_32_ZEICHEN
@@ -143,7 +146,7 @@ docker-compose up --build
 ## Schritt 4: Docker-Images bauen & pushen
 
 ```powershell
-$ACR_NAME = "acrinfoscreen"
+$ACR_NAME = "acrchcmcinfoscreen"
 $ACR_URL = "$ACR_NAME.azurecr.io"
 
 # Bei ACR anmelden
@@ -299,14 +302,15 @@ az containerapp update `
 
 ```powershell
 # === Variablen ===
-$RESOURCE_GROUP = "rg-informationscreen"
+$RESOURCE_GROUP = "CHCMC-Production"
 $LOCATION = "westeurope"
-$COSMOS_ACCOUNT = "cosmos-infoscreen"
-$STORAGE_ACCOUNT = "stinfoscreenmedia"
-$ACR_NAME = "acrinfoscreen"
+$COSMOS_ACCOUNT = "cosmos-chcmc-infoscreen"
+$STORAGE_ACCOUNT = "stchcmcinfoscreenmedia"
+$ACR_NAME = "acrchcmcinfoscreen"
 
-# === 1. Ressourcen erstellen ===
+# === 1. Subscription & Ressourcengruppe ===
 az login
+az account set --subscription "ABB-APP-NMG-PROD-APM0012632-01"
 az group create --name $RESOURCE_GROUP --location $LOCATION
 
 az cosmosdb create --name $COSMOS_ACCOUNT --resource-group $RESOURCE_GROUP --kind MongoDB --server-version 4.2 --default-consistency-level Session --locations regionName=$LOCATION failoverPriority=0
