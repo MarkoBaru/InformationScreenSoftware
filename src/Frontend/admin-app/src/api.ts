@@ -1,11 +1,28 @@
 const API = '/api/admin'
 
+function getToken(): string | null {
+  return localStorage.getItem('auth_token')
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const token = getToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   const res = await fetch(url, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers,
     ...options,
   })
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_user')
+    window.location.href = '/login'
+    throw new Error('Nicht autorisiert')
+  }
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || `HTTP ${res.status}`)
@@ -89,13 +106,60 @@ export const mediaApi = {
   upload: async (file: File): Promise<MediaAsset> => {
     const form = new FormData()
     form.append('file', file)
+    const token = getToken()
+    const headers: Record<string, string> = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
     const res = await fetch(`${API}/media/upload`, {
       method: 'POST',
       credentials: 'include',
+      headers,
       body: form,
     })
+    if (res.status === 401) {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      window.location.href = '/login'
+      throw new Error('Nicht autorisiert')
+    }
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },
   delete: (id: number) => request<void>(`${API}/media/${id}`, { method: 'DELETE' }),
+}
+
+// Auth API
+export interface User {
+  id: number; username: string; displayName: string;
+  role: 'User' | 'Admin'; isActive: boolean; createdAt: string;
+}
+
+export interface LoginResponse {
+  token: string; user: User;
+}
+
+export const authApi = {
+  login: async (username: string, password: string): Promise<LoginResponse> => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => null)
+      throw new Error(data?.message || 'Login fehlgeschlagen')
+    }
+    return res.json()
+  },
+  me: () => request<User>('/api/auth/me'),
+}
+
+// Users API (Admin only)
+export const usersApi = {
+  list: () => request<User[]>(`${API}/users`),
+  get: (id: number) => request<User>(`${API}/users/${id}`),
+  create: (data: { username: string; password: string; displayName: string; role: string }) =>
+    request<User>(`${API}/users`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { displayName: string; role: string; isActive: boolean; password?: string }) =>
+    request<User>(`${API}/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<void>(`${API}/users/${id}`, { method: 'DELETE' }),
 }
