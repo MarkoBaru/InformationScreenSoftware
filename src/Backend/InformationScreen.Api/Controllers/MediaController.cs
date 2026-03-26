@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
@@ -7,9 +7,9 @@ namespace InformationScreen.Api.Controllers;
 [Route("api/media")]
 public class MediaController : ControllerBase
 {
-    private readonly MediaService _mediaService;
+    private readonly IMediaService _mediaService;
 
-    public MediaController(MediaService mediaService)
+    public MediaController(IMediaService mediaService)
     {
         _mediaService = mediaService;
     }
@@ -19,6 +19,10 @@ public class MediaController : ControllerBase
     {
         var asset = await _mediaService.GetByIdAsync(id);
         if (asset == null) return NotFound();
+
+        // Azure Blob Storage: FilePath is an HTTP URL → redirect
+        if (asset.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            return Redirect(asset.FilePath);
 
         if (!System.IO.File.Exists(asset.FilePath))
             return NotFound();
