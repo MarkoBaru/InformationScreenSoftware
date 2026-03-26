@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<ScreenTile> ScreenTiles => Set<ScreenTile>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +62,15 @@ public class AppDbContext : DbContext
             e.Property(m => m.FileName).IsRequired().HasMaxLength(500);
             e.Property(m => m.FilePath).IsRequired().HasMaxLength(1000);
             e.Property(m => m.MimeType).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<AppUser>(e =>
+        {
+            e.HasKey(u => u.Id);
+            e.HasIndex(u => u.Username).IsUnique();
+            e.Property(u => u.Username).IsRequired().HasMaxLength(100);
+            e.Property(u => u.PasswordHash).IsRequired();
+            e.Property(u => u.DisplayName).IsRequired().HasMaxLength(200);
         });
     }
 }

@@ -1,16 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/screens")]
+[Authorize]
 public class AdminScreensController : ControllerBase
 {
-    private readonly ScreenService _screenService;
+    private readonly IScreenService _screenService;
 
-    public AdminScreensController(ScreenService screenService)
+    public AdminScreensController(IScreenService screenService)
     {
         _screenService = screenService;
     }

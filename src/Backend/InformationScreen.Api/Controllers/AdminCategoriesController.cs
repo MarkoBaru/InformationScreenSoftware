@@ -1,16 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/categories")]
+[Authorize]
 public class AdminCategoriesController : ControllerBase
 {
-    private readonly CategoryService _categoryService;
+    private readonly ICategoryService _categoryService;
 
-    public AdminCategoriesController(CategoryService categoryService)
+    public AdminCategoriesController(ICategoryService categoryService)
     {
         _categoryService = categoryService;
     }

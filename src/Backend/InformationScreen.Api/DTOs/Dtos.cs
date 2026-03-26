@@ -142,3 +142,38 @@ public record MediaAssetDto(
     long FileSizeBytes,
     DateTime UploadedAt
 );
+
+// === Auth DTOs ===
+
+public record LoginRequest(
+    string Username,
+    string Password
+);
+
+public record LoginResponse(
+    string Token,
+    UserDto User
+);
+
+public record UserDto(
+    int Id,
+    string Username,
+    string DisplayName,
+    UserRole Role,
+    bool IsActive,
+    DateTime CreatedAt
+);
+
+public record CreateUserRequest(
+    string Username,
+    string Password,
+    string DisplayName,
+    UserRole Role
+);
+
+public record UpdateUserRequest(
+    string DisplayName,
+    UserRole Role,
+    bool IsActive,
+    string? Password
+);

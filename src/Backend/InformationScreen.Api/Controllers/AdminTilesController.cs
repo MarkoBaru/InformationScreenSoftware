@@ -1,16 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/tiles")]
+[Authorize]
 public class AdminTilesController : ControllerBase
 {
-    private readonly TileService _tileService;
+    private readonly ITileService _tileService;
 
-    public AdminTilesController(TileService tileService)
+    public AdminTilesController(ITileService tileService)
     {
         _tileService = tileService;
     }

@@ -1,15 +1,17 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/media")]
+[Authorize]
 public class AdminMediaController : ControllerBase
 {
-    private readonly MediaService _mediaService;
+    private readonly IMediaService _mediaService;
 
-    public AdminMediaController(MediaService mediaService)
+    public AdminMediaController(IMediaService mediaService)
     {
         _mediaService = mediaService;
     }
