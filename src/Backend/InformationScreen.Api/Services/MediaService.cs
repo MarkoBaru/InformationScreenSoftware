@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using InformationScreen.Api.Data;
 using InformationScreen.Api.DTOs;
 using InformationScreen.Api.Models;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Services;
 
-public class MediaService
+public class MediaService : IMediaService
 {
     private readonly AppDbContext _db;
     private readonly string _uploadPath;

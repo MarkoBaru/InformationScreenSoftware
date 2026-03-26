@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using InformationScreen.Api.Data;
 using InformationScreen.Api.DTOs;
 using InformationScreen.Api.Models;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Services;
 
-public class CategoryService
+public class CategoryService : ICategoryService
 {
     private readonly AppDbContext _db;
 

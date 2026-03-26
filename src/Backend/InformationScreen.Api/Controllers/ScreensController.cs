@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
@@ -7,13 +7,11 @@ namespace InformationScreen.Api.Controllers;
 [Route("api/screens")]
 public class ScreensController : ControllerBase
 {
-    private readonly ScreenService _screenService;
-    private readonly MediaService _mediaService;
+    private readonly IScreenService _screenService;
 
-    public ScreensController(ScreenService screenService, MediaService mediaService)
+    public ScreensController(IScreenService screenService)
     {
         _screenService = screenService;
-        _mediaService = mediaService;
     }
 
     [HttpGet("{slug}")]
