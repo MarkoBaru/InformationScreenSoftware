@@ -105,7 +105,7 @@ export default function ScreensPage() {
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <a className="btn btn--small" href={`http://localhost:5173/kiosk/${s.slug}`} target="_blank" rel="noopener noreferrer">Ansehen</a>
+                    <a className="btn btn--small" href={`/kiosk/${s.slug}`} target="_blank" rel="noopener noreferrer">Ansehen</a>
                     <button className="btn btn--small" onClick={() => navigate(`/screens/${s.id}`)}>Bearbeiten</button>
                     <button className="btn btn--small btn--danger" onClick={() => handleDelete(s.id, s.name)}>Löschen</button>
                   </div>
