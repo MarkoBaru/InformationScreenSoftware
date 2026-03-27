@@ -33,3 +33,33 @@
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
+
+.idle-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg, #000);
+  cursor: pointer;
+}
+
+.idle-overlay__dots {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 210;
+}
+
+.idle-overlay__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transition: background 0.3s;
+}
+
+.idle-overlay__dot.active {
+  background: rgba(255, 255, 255, 0.9);
+}
