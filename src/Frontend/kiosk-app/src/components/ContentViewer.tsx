@@ -43,7 +43,7 @@ function buildSchichtplanUrl(baseUrl: string, monthName: string): string {
 
 interface ContentViewerProps {
   url?: string | null
-  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
+  contentType: 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
   articleBody?: string | null
   title?: string
   onBack: () => void
@@ -52,6 +52,15 @@ interface ContentViewerProps {
 export default function ContentViewer({ url, contentType, articleBody, title, onBack }: ContentViewerProps) {
   const renderContent = () => {
     switch (contentType) {
+      case 'FullscreenImage':
+        return (
+          <img
+            className="content-viewer__fullscreen-image"
+            src={url || ''}
+            alt={title || 'Bild'}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+          />
+        )
       case 'Video':
         return (
           <video

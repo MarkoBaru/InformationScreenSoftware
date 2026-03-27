@@ -10,6 +10,7 @@ public enum LinkTarget
 public enum ContentType
 {
     Link,
+    FullscreenImage,
     Video,
     Pdf,
     Article,

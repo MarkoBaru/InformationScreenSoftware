@@ -4,7 +4,7 @@ import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, Me
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
-type ContentType = 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
+type ContentType = 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
 
 export default function TileEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -224,6 +224,7 @@ export default function TileEditPage() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {([
               ['Link', 'Link'],
+              ['FullscreenImage', 'Bild'],
               ['Video', 'Video'],
               ['Pdf', 'PDF'],
               ['Article', 'Beitrag'],
@@ -275,6 +276,30 @@ export default function TileEditPage() {
         </div>
 
         {/* === Type-specific fields === */}
+
+        {/* FULLSCREEN IMAGE */}
+        {contentType === 'FullscreenImage' && (
+          <div className="form-group">
+            <label>Vollbild-Bild</label>
+            {linkUrl && (
+              <div style={{ marginBottom: 8 }}>
+                <img src={linkUrl} alt="Vorschau" style={{ maxWidth: '100%', maxHeight: 200, objectFit: 'contain', borderRadius: 4 }} />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Bild-URL oder hochladen" style={{ flex: 1 }} />
+              <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
+                {uploading ? 'Wird hochgeladen...' : 'Bild hochladen'}
+                <input
+                  type="file" accept="image/*" style={{ display: 'none' }}
+                  disabled={uploading}
+                  onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}
+                />
+              </label>
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Dieses Bild wird im Kiosk-Modus als Vollbild angezeigt.</p>
+          </div>
+        )}
 
         {/* LINK */}
         {contentType === 'Link' && (
