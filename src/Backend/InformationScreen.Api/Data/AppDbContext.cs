@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<AppSetting> Settings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -71,6 +72,14 @@ public class AppDbContext : DbContext
             e.Property(u => u.Username).IsRequired().HasMaxLength(100);
             e.Property(u => u.PasswordHash).IsRequired();
             e.Property(u => u.DisplayName).IsRequired().HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<AppSetting>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.HasIndex(s => s.Key).IsUnique();
+            e.Property(s => s.Key).IsRequired().HasMaxLength(100);
+            e.Property(s => s.Value).IsRequired().HasMaxLength(2000);
         });
     }
 }
