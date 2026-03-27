@@ -8,9 +8,10 @@ interface StreamPlayerProps {
 
 /**
  * Plays an RTSP stream via RTSPtoWeb's MSE (MediaSource Extensions) endpoint.
- * 1. Registers the RTSP URL as a stream at RTSPtoWeb via REST API
- * 2. Connects via WebSocket to /stream/{id}/channel/0/mse
- * 3. Receives fMP4 fragments and renders via MediaSource in a <video> element
+ * 1. Fetches RTSPtoWeb base URL from backend settings
+ * 2. Registers the RTSP URL as a stream at RTSPtoWeb via REST API
+ * 3. Connects via WebSocket to /stream/{id}/channel/0/mse
+ * 4. Receives fMP4 fragments and renders via MediaSource in a <video> element
  */
 export default function StreamPlayer({ url, style, className }: StreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -28,8 +29,21 @@ export default function StreamPlayer({ url, style, className }: StreamPlayerProp
 
     const start = async () => {
       try {
-        // Step 1: Register stream at RTSPtoWeb via POST /stream/{id}/add
-        const addRes = await fetch(`/rtsp-api/stream/${encodeURIComponent(streamId)}/add`, {
+        // Step 0: Fetch RTSPtoWeb base URL from settings
+        let rtspBaseUrl = ''
+        try {
+          const settingsRes = await fetch('/api/settings')
+          if (settingsRes.ok) {
+            const settings = await settingsRes.json()
+            rtspBaseUrl = (settings.rtsptowebUrl || '').replace(/\/+$/, '')
+          }
+        } catch { /* fallback to relative URLs */ }
+
+        // Build API base URL
+        const apiBase = rtspBaseUrl ? `${rtspBaseUrl}` : '/rtsp-api'
+
+        // Step 1: Register stream at RTSPtoWeb
+        const addRes = await fetch(`${apiBase}/stream/${encodeURIComponent(streamId)}/add`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -51,7 +65,7 @@ export default function StreamPlayer({ url, style, className }: StreamPlayerProp
           const body = await addRes.json().catch(() => null)
           if (!body || body.status !== 0) {
             // Try to check if stream already exists
-            const infoRes = await fetch(`/rtsp-api/stream/${encodeURIComponent(streamId)}/info`)
+            const infoRes = await fetch(`${apiBase}/stream/${encodeURIComponent(streamId)}/info`)
             if (!infoRes.ok) {
               throw new Error(`RTSPtoWeb Registrierung fehlgeschlagen: ${addRes.status}`)
             }
@@ -61,8 +75,17 @@ export default function StreamPlayer({ url, style, className }: StreamPlayerProp
         if (cancelled) return
 
         // Step 2: Connect WebSocket for MSE playback
-        const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const wsUrl = `${wsProto}//${window.location.host}/stream/${encodeURIComponent(streamId)}/channel/0/mse?uuid=${encodeURIComponent(streamId)}&channel=0`
+        let wsUrl: string
+        if (rtspBaseUrl) {
+          // Direct connection to RTSPtoWeb (local network)
+          const parsed = new URL(rtspBaseUrl)
+          const wsProto = parsed.protocol === 'https:' ? 'wss:' : 'ws:'
+          wsUrl = `${wsProto}//${parsed.host}/stream/${encodeURIComponent(streamId)}/channel/0/mse?uuid=${encodeURIComponent(streamId)}&channel=0`
+        } else {
+          // Proxied through nginx
+          const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+          wsUrl = `${wsProto}//${window.location.host}/stream/${encodeURIComponent(streamId)}/channel/0/mse?uuid=${encodeURIComponent(streamId)}&channel=0`
+        }
 
         const mse = new MediaSource()
         video.src = URL.createObjectURL(mse)
