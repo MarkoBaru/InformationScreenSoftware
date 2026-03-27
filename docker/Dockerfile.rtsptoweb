@@ -1,0 +1,2 @@
+FROM ghcr.io/deepch/rtsptoweb:latest
+COPY docker/rtsptoweb-config.json /config/config.json

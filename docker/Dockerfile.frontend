@@ -22,8 +22,12 @@ COPY --from=build-admin /app/dist /usr/share/nginx/html
 # Copy kiosk app to /kiosk/
 COPY --from=build-kiosk /app/dist /usr/share/nginx/html/kiosk
 
-# Nginx config
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Nginx config (template with env var placeholders)
+COPY docker/nginx.conf /etc/nginx/nginx.conf.template
+
+# Default upstream URLs (match docker-compose service names)
+ENV BACKEND_URL=http://backend:8080
+ENV RTSPTOWEB_URL=http://rtsptoweb:8083
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh", "-c", "envsubst '$BACKEND_URL $RTSPTOWEB_URL' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
