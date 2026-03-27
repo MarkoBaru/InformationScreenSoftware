@@ -163,3 +163,10 @@ export const usersApi = {
     request<User>(`${API}/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/users/${id}`, { method: 'DELETE' }),
 }
+
+// Settings API
+export const settingsApi = {
+  get: () => request<Record<string, string>>('/api/settings'),
+  update: (settings: Record<string, string>) =>
+    request<Record<string, string>>('/api/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+}

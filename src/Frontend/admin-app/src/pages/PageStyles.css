@@ -401,3 +401,67 @@
   font-weight: 500;
   font-size: 0.9rem;
 }
+
+/* Settings Page */
+.settings-section {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  max-width: 720px;
+  margin-bottom: 24px;
+}
+
+.settings-section h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.settings-hint {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.settings-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+}
+
+.settings-input:focus {
+  border-color: var(--primary);
+}
+
+.settings-description {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.settings-saved {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 0.9rem;
+}

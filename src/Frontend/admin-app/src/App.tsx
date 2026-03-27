@@ -9,6 +9,7 @@ import TileEditPage from './pages/TileEditPage'
 import MediaPage from './pages/MediaPage'
 import CategoriesPage from './pages/CategoriesPage'
 import UsersPage from './pages/UsersPage'
+import SettingsPage from './pages/SettingsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -37,6 +38,9 @@ function App() {
         <Route path="/categories" element={<CategoriesPage />} />
         {user?.role === 'Admin' && (
           <Route path="/users" element={<UsersPage />} />
+        )}
+        {user?.role === 'Admin' && (
+          <Route path="/settings" element={<SettingsPage />} />
         )}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
