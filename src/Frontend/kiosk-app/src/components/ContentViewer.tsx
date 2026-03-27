@@ -1,3 +1,4 @@
+import StreamPlayer from './StreamPlayer'
 import './ContentViewer.css'
 
 const MONTH_MAPPING: Record<string, { sheet: string; item: string }> = {
@@ -98,13 +99,9 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
       }
       case 'Stream':
         return (
-          <video
+          <StreamPlayer
+            url={url || ''}
             className="content-viewer__video"
-            src={url || ''}
-            autoPlay
-            muted
-            loop
-            playsInline
             style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
           />
         )

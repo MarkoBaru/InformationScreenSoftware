@@ -413,7 +413,8 @@ export default function TileEditPage() {
               placeholder="rtsp://benutzer:passwort@10.41.213.13:554/h264Preview_01_main"
             />
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
-              Unterstützte Protokolle: RTSP, HTTP, HLS (m3u8). Für RTSP-Streams wird ein Media-Proxy (z.B. go2rtc, MediaMTX) empfohlen, der den Stream als WebRTC/HLS bereitstellt.
+              RTSP-Streams werden automatisch via go2rtc in ein browserkompatibles Format konvertiert.
+              Unterstützte Formate: RTSP, RTMP, HTTP-MJPEG, HLS (m3u8).
             </p>
           </div>
         )}
