@@ -1,0 +1,43 @@
+{
+  "channel_defaults": {
+    "on_demand": true
+  },
+  "server": {
+    "debug": false,
+    "http_debug": false,
+    "http_demo": false,
+    "http_dir": "",
+    "http_login": "",
+    "http_password": "",
+    "http_port": ":8083",
+    "https": false,
+    "https_auto_tls": false,
+    "https_auto_tls_name": "",
+    "https_cert": "",
+    "https_key": "",
+    "https_port": "",
+    "ice_credential": "",
+    "ice_servers": [],
+    "ice_username": "",
+    "log_level": "info",
+    "rtsp_port": ":5541",
+    "token": {
+      "backend": "",
+      "enable": false
+    },
+    "webrtc_port_max": 0,
+    "webrtc_port_min": 0
+  },
+  "streams": {
+    "stream_cnRzcDovL0JlbnV0emVyMTpBQkJCZW51": {
+      "channels": {
+        "0": {
+          "name": "ch1",
+          "on_demand": true,
+          "url": "rtsp://Benutzer1:ABBBenutzer_AKL1@10.41.213.13:554/h264Preview_01_main"
+        }
+      },
+      "name": "stream_cnRzcDovL0JlbnV0emVyMTpBQkJCZW51"
+    }
+  }
+}

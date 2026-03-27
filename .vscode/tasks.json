@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Git commit and push",
+			"type": "shell",
+			"command": "cd c:\\Users\\CHMABAR11\\source\\repos\\InformationScreenSoftware; git add -A; git commit -m 'feat: go2rtc durch RTSPtoWeb ersetzt - RTSP-Streams funktionieren im Browser via MSE'; git push origin main; git push azure main",
+			"isBackground": false
+		}
+	]
+}
