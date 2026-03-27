@@ -21,7 +21,7 @@ $ErrorActionPreference = "Stop"
 # ============================================================
 $SUBSCRIPTION      = "ABB-APP-NMG-PROD-APM0012632-01"
 $RESOURCE_GROUP     = "CHCMC-Production"
-$LOCATION           = "westeurope"
+$LOCATION           = "switzerlandnorth"
 
 $COSMOS_ACCOUNT     = "cosmos-chcmc-infoscreen"
 $COSMOS_DB_NAME     = "informationscreen"
@@ -36,6 +36,7 @@ $KEYVAULT_NAME      = "kv-chcmc-infoscreen"
 $CAE_NAME           = "cae-chcmc-production"
 $CA_BACKEND         = "ca-infoscreen-backend"
 $CA_FRONTEND        = "ca-infoscreen-frontend"
+$CA_RTSPTOWEB       = "ca-infoscreen-rtsptoweb"
 
 $JWT_ISSUER         = "InformationScreen"
 
@@ -69,6 +70,20 @@ function Invoke-AzCommand($description, $command) {
         throw "Befehl fehlgeschlagen: $command"
     }
     return $result
+}
+
+# Hilfsfunktion: Secret sicher in Key Vault speichern (umgeht &-Problem via Temp-Datei)
+function Set-KVSecret($vaultName, $secretName, $secretValue) {
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    try {
+        [System.IO.File]::WriteAllText($tempFile, $secretValue)
+        az keyvault secret set --vault-name $vaultName --name $secretName --file $tempFile --encoding utf-8 -o none
+        if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+            throw "Key Vault Secret '$secretName' speichern fehlgeschlagen"
+        }
+    } finally {
+        Remove-Item $tempFile -ErrorAction SilentlyContinue
+    }
 }
 
 # ============================================================
@@ -124,7 +139,18 @@ if (-not $SkipInfra) {
 
     # --- Key Vault ---
     Write-Step "5" "Azure Key Vault erstellen"
-    Invoke-AzCommand "Key Vault" "az keyvault create --name $KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --enable-rbac-authorization false -o none"
+    if (-not $DryRun) {
+        $ErrorActionPreference = "Continue"
+        $kvExists = az keyvault show --name $KEYVAULT_NAME --resource-group $RESOURCE_GROUP --query name -o tsv 2>$null
+        $ErrorActionPreference = "Stop"
+        if ($kvExists) {
+            Write-Info "Key Vault existiert bereits"
+        } else {
+            Invoke-AzCommand "Key Vault" "az keyvault create --name $KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --enable-rbac-authorization false -o none"
+        }
+    } else {
+        Write-Host "  [DRY-RUN] az keyvault create --name $KEYVAULT_NAME ..." -ForegroundColor Yellow
+    }
     Write-OK "$KEYVAULT_NAME"
 
     # --- Secrets in Key Vault speichern ---
@@ -147,28 +173,43 @@ if (-not $SkipInfra) {
     $JWT_KEY = [Convert]::ToBase64String($JWT_KEY_BYTES)
     Write-OK "JWT Key generiert (88 Zeichen, kryptografisch sicher)"
 
-    # Secrets im Key Vault speichern
+    # Secrets im Key Vault speichern (via Temp-Datei, da Connection Strings '&' enthalten)
     if (-not $DryRun) {
-        az keyvault secret set --vault-name $KEYVAULT_NAME --name "mongodb-connection" --value "$COSMOS_CONN" -o none
-        az keyvault secret set --vault-name $KEYVAULT_NAME --name "blob-connection" --value "$BLOB_CONN" -o none
-        az keyvault secret set --vault-name $KEYVAULT_NAME --name "jwt-key" --value "$JWT_KEY" -o none
+        Set-KVSecret $KEYVAULT_NAME "mongodb-connection" $COSMOS_CONN
+        Set-KVSecret $KEYVAULT_NAME "blob-connection" $BLOB_CONN
+        Set-KVSecret $KEYVAULT_NAME "jwt-key" $JWT_KEY
     }
     Write-OK "3 Secrets gespeichert: mongodb-connection, blob-connection, jwt-key"
 
-    # --- Container Apps Environment ---
-    Write-Step "7" "Container Apps Environment erstellen"
-    Invoke-AzCommand "Container Apps Environment" "az containerapp env create --name $CAE_NAME --resource-group $RESOURCE_GROUP --location $LOCATION -o none"
-    Write-OK "$CAE_NAME"
-
 } else {
     Write-Step "SKIP" "Infrastruktur wird uebersprungen (--SkipInfra)"
-
-    # Secrets aus Key Vault laden fuer Container-Erstellung
-    Write-Info "Secrets aus Key Vault laden..."
-    $COSMOS_CONN = Invoke-AzCommand "Cosmos DB Connection String" "az keyvault secret show --vault-name $KEYVAULT_NAME --name 'mongodb-connection' --query value -o tsv"
-    $BLOB_CONN = Invoke-AzCommand "Blob Connection String" "az keyvault secret show --vault-name $KEYVAULT_NAME --name 'blob-connection' --query value -o tsv"
-    $JWT_KEY = Invoke-AzCommand "JWT Key" "az keyvault secret show --vault-name $KEYVAULT_NAME --name 'jwt-key' --query value -o tsv"
 }
+
+# ============================================================
+# CONTAINER APPS ENVIRONMENT (laeuft immer, da fuer Deploy noetig)
+# ============================================================
+Write-Step "7" "Resource Provider und Container Apps Environment"
+
+Write-Info "Microsoft.App und Microsoft.OperationalInsights registrieren..."
+if (-not $DryRun) {
+    az provider register -n Microsoft.App --wait 2>$null
+    az provider register -n Microsoft.OperationalInsights --wait 2>$null
+}
+Write-OK "Resource Provider registriert"
+
+if (-not $DryRun) {
+    $ErrorActionPreference = "Continue"
+    $caeExists = az containerapp env show --name $CAE_NAME --resource-group $RESOURCE_GROUP --query name -o tsv 2>$null
+    $ErrorActionPreference = "Stop"
+    if ($caeExists) {
+        Write-Info "Container Apps Environment existiert bereits"
+    } else {
+        Invoke-AzCommand "Container Apps Environment" "az containerapp env create --name $CAE_NAME --resource-group $RESOURCE_GROUP --location $LOCATION -o none"
+    }
+} else {
+    Write-Host "  [DRY-RUN] az containerapp env create --name $CAE_NAME ..." -ForegroundColor Yellow
+}
+Write-OK "$CAE_NAME"
 
 # ============================================================
 # DOCKER BUILD & PUSH
@@ -209,6 +250,20 @@ if (-not $SkipBuild) {
     }
     Write-OK "Frontend-Image gepusht"
 
+    Write-Info "RTSPtoWeb-Image bauen..."
+    if (-not $DryRun) {
+        docker build -f docker/Dockerfile.rtsptoweb -t "${ACR_URL}/infoscreen-rtsptoweb:latest" .
+        if ($LASTEXITCODE -ne 0) { throw "RTSPtoWeb Docker Build fehlgeschlagen" }
+    }
+    Write-OK "RTSPtoWeb-Image gebaut"
+
+    Write-Info "RTSPtoWeb-Image pushen..."
+    if (-not $DryRun) {
+        docker push "${ACR_URL}/infoscreen-rtsptoweb:latest"
+        if ($LASTEXITCODE -ne 0) { throw "RTSPtoWeb Docker Push fehlgeschlagen" }
+    }
+    Write-OK "RTSPtoWeb-Image gepusht"
+
 } else {
     Write-Step "SKIP" "Docker-Build wird uebersprungen (--SkipBuild)"
 }
@@ -225,58 +280,179 @@ Write-Info "ACR Credentials abrufen..."
 $ACR_USER = Invoke-AzCommand "ACR Username" "az acr credential show --name $ACR_NAME --query username -o tsv"
 $ACR_PASS = Invoke-AzCommand "ACR Password" "az acr credential show --name $ACR_NAME --query 'passwords[0].value' -o tsv"
 
-# Backend Container App
-Write-Info "Backend Container App erstellen..."
+$REV_SUFFIX = "v" + (Get-Date -Format "yyyyMMddHHmm")
+
+# Backend Container App (mehrstufig: create -> identity -> KV policy -> secrets -> env-vars)
+$KV_URI = "https://$KEYVAULT_NAME.vault.azure.net"
 if (-not $DryRun) {
-    az containerapp create `
-        --name $CA_BACKEND `
-        --resource-group $RESOURCE_GROUP `
-        --environment $CAE_NAME `
-        --image "${ACR_URL}/infoscreen-backend:latest" `
-        --registry-server $ACR_URL `
-        --registry-username $ACR_USER `
-        --registry-password $ACR_PASS `
-        --target-port 8080 `
-        --ingress internal `
-        --min-replicas 1 `
-        --max-replicas 3 `
-        --cpu 0.5 `
-        --memory 1.0Gi `
-        --env-vars `
-            "DATABASE_PROVIDER=MongoDB" `
-            "MONGODB_CONNECTION=secretref:mongodb-connection" `
-            "MONGODB_DATABASE=$COSMOS_DB_NAME" `
-            "AzureBlobStorage__ConnectionString=secretref:blob-connection" `
-            "AzureBlobStorage__ContainerName=$BLOB_CONTAINER" `
-            "JWT_KEY=secretref:jwt-key" `
-            "JWT_ISSUER=$JWT_ISSUER" `
-            "ALLOWED_ORIGINS=https://$CA_FRONTEND.*.azurecontainerapps.io" `
-        --secrets `
-            "mongodb-connection=$COSMOS_CONN" `
-            "blob-connection=$BLOB_CONN" `
-            "jwt-key=$JWT_KEY" `
-        -o none
+    # Pruefen ob Backend bereits existiert
+    $oldEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $BACKEND_EXISTS = az containerapp show --name $CA_BACKEND --resource-group $RESOURCE_GROUP --query "name" -o tsv 2>$null
+    $ErrorActionPreference = $oldEAP
+
+    if ($BACKEND_EXISTS) {
+        Write-Info "Backend Container App existiert bereits - Image aktualisieren..."
+        az containerapp update `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --image "${ACR_URL}/infoscreen-backend:latest" `
+            --revision-suffix $REV_SUFFIX `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Backend Container App konnte nicht aktualisiert werden." }
+    } else {
+        # Schritt 1: Container App erstellen (ohne Secrets/Identity)
+        Write-Info "Backend Container App erstellen..."
+        az containerapp create `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --environment $CAE_NAME `
+            --image "${ACR_URL}/infoscreen-backend:latest" `
+            --registry-server $ACR_URL `
+            --registry-username $ACR_USER `
+            --registry-password $ACR_PASS `
+            --target-port 8080 `
+            --ingress internal `
+            --allow-insecure `
+            --min-replicas 1 `
+            --max-replicas 3 `
+            --cpu 0.5 `
+            --memory 1.0Gi `
+            --env-vars `
+                "DATABASE_PROVIDER=MongoDB" `
+                "MONGODB_DATABASE=$COSMOS_DB_NAME" `
+                "AzureBlobStorage__ContainerName=$BLOB_CONTAINER" `
+                "JWT_ISSUER=$JWT_ISSUER" `
+                "ALLOWED_ORIGINS=https://$CA_FRONTEND.*.azurecontainerapps.io" `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Backend Container App konnte nicht erstellt werden." }
+
+        # Schritt 2: System-Assigned Managed Identity zuweisen
+        Write-Info "Managed Identity zuweisen..."
+        az containerapp identity assign `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --system-assigned `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Managed Identity konnte nicht zugewiesen werden." }
+
+        # Schritt 3: Key Vault Zugriff fuer Backend einrichten
+        Write-Info "Key Vault Zugriff fuer Backend einrichten..."
+        $BACKEND_PRINCIPAL = az containerapp show `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --query "identity.principalId" -o tsv
+        if (-not $BACKEND_PRINCIPAL) { throw "Principal ID konnte nicht abgerufen werden." }
+        az keyvault set-policy `
+            --name $KEYVAULT_NAME `
+            --object-id $BACKEND_PRINCIPAL `
+            --secret-permissions get `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Key Vault Policy konnte nicht gesetzt werden." }
+
+        # Schritt 4: Key Vault Reference Secrets setzen
+        Write-Info "Key Vault Secrets zuweisen..."
+        az containerapp secret set `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --secrets `
+                "mongodb-connection=keyvaultref:$KV_URI/secrets/mongodb-connection,identityref:system" `
+                "blob-connection=keyvaultref:$KV_URI/secrets/blob-connection,identityref:system" `
+                "jwt-key=keyvaultref:$KV_URI/secrets/jwt-key,identityref:system" `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Key Vault Secrets konnten nicht gesetzt werden." }
+
+        # Schritt 5: Umgebungsvariablen mit Secret-Referenzen aktualisieren
+        Write-Info "Secret-Umgebungsvariablen setzen..."
+        az containerapp update `
+            --name $CA_BACKEND `
+            --resource-group $RESOURCE_GROUP `
+            --set-env-vars `
+                "MONGODB_CONNECTION=secretref:mongodb-connection" `
+                "AzureBlobStorage__ConnectionString=secretref:blob-connection" `
+                "JWT_KEY=secretref:jwt-key" `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Umgebungsvariablen konnten nicht gesetzt werden." }
+    }
 }
-Write-OK "Backend: $CA_BACKEND (intern, Port 8080)"
+Write-OK "Backend: $CA_BACKEND (intern, Port 8080, Managed Identity)"
+
+# RTSPtoWeb Container App
+Write-Info "RTSPtoWeb Container App..."
+if (-not $DryRun) {
+    $oldEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $RTSPTOWEB_EXISTS = az containerapp show --name $CA_RTSPTOWEB --resource-group $RESOURCE_GROUP --query "name" -o tsv 2>$null
+    $ErrorActionPreference = $oldEAP
+
+    if ($RTSPTOWEB_EXISTS) {
+        Write-Info "RTSPtoWeb existiert bereits - Image aktualisieren..."
+        az containerapp update `
+            --name $CA_RTSPTOWEB `
+            --resource-group $RESOURCE_GROUP `
+            --image "${ACR_URL}/infoscreen-rtsptoweb:latest" `
+            --revision-suffix $REV_SUFFIX `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "RTSPtoWeb Container App konnte nicht aktualisiert werden." }
+    } else {
+        Write-Info "RTSPtoWeb Container App erstellen..."
+        az containerapp create `
+            --name $CA_RTSPTOWEB `
+            --resource-group $RESOURCE_GROUP `
+            --environment $CAE_NAME `
+            --image "${ACR_URL}/infoscreen-rtsptoweb:latest" `
+            --registry-server $ACR_URL `
+            --registry-username $ACR_USER `
+            --registry-password $ACR_PASS `
+            --target-port 8083 `
+            --ingress internal `
+            --allow-insecure `
+            --min-replicas 1 `
+            --max-replicas 1 `
+            --cpu 0.25 `
+            --memory 0.5Gi `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "RTSPtoWeb Container App konnte nicht erstellt werden." }
+    }
+}
+Write-OK "RTSPtoWeb: $CA_RTSPTOWEB (intern, Port 8083)"
 
 # Frontend Container App
-Write-Info "Frontend Container App erstellen..."
+Write-Info "Frontend Container App..."
 if (-not $DryRun) {
-    az containerapp create `
-        --name $CA_FRONTEND `
-        --resource-group $RESOURCE_GROUP `
-        --environment $CAE_NAME `
-        --image "${ACR_URL}/infoscreen-frontend:latest" `
-        --registry-server $ACR_URL `
-        --registry-username $ACR_USER `
-        --registry-password $ACR_PASS `
-        --target-port 80 `
-        --ingress external `
-        --min-replicas 1 `
-        --max-replicas 3 `
-        --cpu 0.25 `
-        --memory 0.5Gi `
-        -o none
+    $oldEAP = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    $FRONTEND_EXISTS = az containerapp show --name $CA_FRONTEND --resource-group $RESOURCE_GROUP --query "name" -o tsv 2>$null
+    $ErrorActionPreference = $oldEAP
+
+    if ($FRONTEND_EXISTS) {
+        Write-Info "Frontend existiert bereits - Image aktualisieren..."
+        az containerapp update `
+            --name $CA_FRONTEND `
+            --resource-group $RESOURCE_GROUP `
+            --image "${ACR_URL}/infoscreen-frontend:latest" `
+            --revision-suffix $REV_SUFFIX `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Frontend Container App konnte nicht aktualisiert werden." }
+    } else {
+        Write-Info "Frontend Container App erstellen..."
+        az containerapp create `
+            --name $CA_FRONTEND `
+            --resource-group $RESOURCE_GROUP `
+            --environment $CAE_NAME `
+            --image "${ACR_URL}/infoscreen-frontend:latest" `
+            --registry-server $ACR_URL `
+            --registry-username $ACR_USER `
+            --registry-password $ACR_PASS `
+            --target-port 80 `
+            --ingress external `
+            --min-replicas 1 `
+            --max-replicas 3 `
+            --cpu 0.25 `
+            --memory 0.5Gi `
+            --env-vars `
+                "BACKEND_URL=http://$CA_BACKEND" `
+                "RTSPTOWEB_URL=http://$CA_RTSPTOWEB" `
+            -o none
+        if ($LASTEXITCODE -ne 0) { throw "Frontend Container App konnte nicht erstellt werden." }
+    }
 }
 Write-OK "Frontend: $CA_FRONTEND (extern, Port 80)"
 
@@ -320,8 +496,9 @@ Write-Host "    Container Reg:    $ACR_NAME.azurecr.io" -ForegroundColor Gray
 Write-Host "    Key Vault:        $KEYVAULT_NAME" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  Container Apps:" -ForegroundColor White
-Write-Host "    Backend:  $CA_BACKEND (intern)" -ForegroundColor Gray
-Write-Host "    Frontend: $CA_FRONTEND (extern)" -ForegroundColor Gray
+Write-Host "    Backend:   $CA_BACKEND (intern)" -ForegroundColor Gray
+Write-Host "    RTSPtoWeb: $CA_RTSPTOWEB (intern)" -ForegroundColor Gray
+Write-Host "    Frontend:  $CA_FRONTEND (extern)" -ForegroundColor Gray
 
 if (-not $DryRun) {
     $FRONTEND_URL = az containerapp show --name $CA_FRONTEND --resource-group $RESOURCE_GROUP --query "properties.configuration.ingress.fqdn" -o tsv
