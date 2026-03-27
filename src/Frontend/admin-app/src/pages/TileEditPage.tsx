@@ -4,7 +4,7 @@ import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, Me
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
-type ContentType = 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan'
+type ContentType = 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
 
 export default function TileEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -228,6 +228,7 @@ export default function TileEditPage() {
               ['Pdf', 'PDF'],
               ['Article', 'Beitrag'],
               ['Schichtplan', 'Schichtplan'],
+              ['Stream', 'Stream'],
             ] as [ContentType, string][]).map(([val, label]) => (
               <label key={val} style={{
                 display: 'flex', alignItems: 'center', gap: 4,
@@ -399,6 +400,22 @@ export default function TileEditPage() {
               </select>
             </div>
           </>
+        )}
+
+        {/* STREAM */}
+        {contentType === 'Stream' && (
+          <div className="form-group">
+            <label>Stream-URL</label>
+            <input
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              required
+              placeholder="rtsp://benutzer:passwort@10.41.213.13:554/h264Preview_01_main"
+            />
+            <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
+              Unterstützte Protokolle: RTSP, HTTP, HLS (m3u8). Für RTSP-Streams wird ein Media-Proxy (z.B. go2rtc, MediaMTX) empfohlen, der den Stream als WebRTC/HLS bereitstellt.
+            </p>
+          </div>
         )}
 
         {/* Common fields continued */}

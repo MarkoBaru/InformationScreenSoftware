@@ -11,16 +11,15 @@ interface RichTextEditorProps {
 export default function RichTextEditor({ value, onChange, onInsertImage, placeholder }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const lastHtmlRef = useRef<string>(value)
-  const isInitializedRef = useRef(false)
 
   // Set initial content once on mount
   useEffect(() => {
-    if (editorRef.current && !isInitializedRef.current && value) {
+    if (editorRef.current && value) {
       editorRef.current.innerHTML = value
       lastHtmlRef.current = value
-      isInitializedRef.current = true
     }
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Sync only external value changes (e.g. image insert from media picker)
   useEffect(() => {

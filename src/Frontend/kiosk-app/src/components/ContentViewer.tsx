@@ -42,7 +42,7 @@ function buildSchichtplanUrl(baseUrl: string, monthName: string): string {
 
 interface ContentViewerProps {
   url?: string | null
-  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan'
+  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
   articleBody?: string | null
   title?: string
   onBack: () => void
@@ -96,6 +96,18 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
           return <div style={{ padding: 48, textAlign: 'center' }}>Fehler: Ungültige Schichtplan-Konfiguration</div>
         }
       }
+      case 'Stream':
+        return (
+          <video
+            className="content-viewer__video"
+            src={url || ''}
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
+          />
+        )
       default: // Link
         return (
           <iframe

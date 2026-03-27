@@ -13,7 +13,8 @@ public enum ContentType
     Video,
     Pdf,
     Article,
-    Schichtplan
+    Schichtplan,
+    Stream
 }
 
 public class Tile

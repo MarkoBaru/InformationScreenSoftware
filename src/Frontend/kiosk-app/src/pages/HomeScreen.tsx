@@ -37,8 +37,8 @@ export default function HomeScreen() {
   useIdleTimer(screen?.idleTimeoutSeconds ?? 120, handleIdle)
 
   const handleTileClick = (tile: TileData) => {
-    // Articles and PDFs always render inline
-    if (tile.contentType === 'Article' || tile.contentType === 'Pdf' || tile.contentType === 'Schichtplan') {
+    // Articles, PDFs and Streams always render inline
+    if (tile.contentType === 'Article' || tile.contentType === 'Pdf' || tile.contentType === 'Schichtplan' || tile.contentType === 'Stream') {
       setViewingTile(tile)
       return
     }

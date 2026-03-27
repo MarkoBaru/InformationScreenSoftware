@@ -16,7 +16,7 @@ export interface TileData {
   imageUrl: string | null
   linkUrl: string | null
   linkTarget: 'Embedded' | 'NewTab' | 'SameWindow'
-  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan'
+  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
   articleBody: string | null
   sortOrder: number
   isActive: boolean
