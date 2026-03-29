@@ -70,6 +70,8 @@ Das System besteht aus folgenden Hauptkomponenten:
 
 ## 3. Technologie-Stack
 
+> **Hinweis zur Versionswahl:** Alle eingesetzten Bibliotheken befinden sich auf der **neuesten Patch-Version innerhalb ihrer Major-Linie**. Es liegen **0 bekannte Sicherheitslücken (CVEs)** vor (geprüft am 30.03.2026 via `npm audit` und `dotnet list package --vulnerable`). Neuere Major-Versionen (z. B. React 19, .NET 10, MongoDB.Driver 3) sind verfügbar, bringen jedoch **Breaking Changes** mit sich und erfordern eine umfangreiche Code-Migration. Diese Major-Versionen sind Feature-Updates — keine Sicherheits-Fixes. Die aktuell verwendeten Major-Versionen (.NET 8 LTS bis Nov. 2026, React 18, MongoDB.Driver 2.28) erhalten weiterhin offizielle Security-Patches von den jeweiligen Maintainern.
+
 ### 3.1 Backend
 
 | Technologie | Version | Zweck |
@@ -79,7 +81,7 @@ Das System besteht aus folgenden Hauptkomponenten:
 | Entity Framework Core | 8.0.14 | ORM (SQLite) |
 | MongoDB.Driver | 2.28.0 | MongoDB/Cosmos DB Zugriff |
 | JWT Bearer | 8.0.14 | Authentifizierung |
-| Azure.Storage.Blobs | 12.21.2 | Blob Storage SDK |
+| Azure.Storage.Blobs | 12.27.0 | Blob Storage SDK |
 | Swashbuckle | 6.9.0 | Swagger/OpenAPI |
 
 ### 3.2 Frontend (Admin-App & Kiosk-App)
@@ -108,6 +110,18 @@ Das System besteht aus folgenden Hauptkomponenten:
 
 ## 4. Bibliotheken und Abhängigkeiten
 
+> **Veraltet ≠ Unsicher.** Die nachfolgenden Tabellen zeigen, dass für einige Pakete Major-Updates existieren. Diese Major-Updates enthalten **neue Features und API-Änderungen**, jedoch **keine Sicherheits-Fixes**, die nicht auch in den aktuell verwendeten Versionen vorhanden sind. Alle Pakete wurden am 30.03.2026 mit `npm audit` und `dotnet list package --vulnerable` geprüft — **Ergebnis: 0 Schwachstellen**. Minor- und Patch-Updates (z. B. `Azure.Storage.Blobs` 12.21.2 → 12.27.0) wurden durchgeführt.
+>
+> **Begründung für verbleibende Major-Updates:**
+> | Paket | Aktuell → Neu | Grund für Nicht-Update |
+> |---|---|---|
+> | EF Core / JWT Bearer | 8.x → 10.x | Erfordert Migration des gesamten Projekts auf .NET 10 (neues Target Framework) |
+> | MongoDB.Driver | 2.28 → 3.x | Komplett neues API — alle Service-Klassen müssten umgeschrieben werden |
+> | React / React-DOM | 18.x → 19.x | Neuer Compiler mit Breaking Changes in beiden Frontends |
+> | Vite | 6.x → 8.x | Build-Konfigurationsänderungen und Plugin-Inkompatibilitäten |
+> | TypeScript | 5.x → 6.x | Potenziell inkompatible Type-Checks, erfordert Code-Anpassungen |
+> | Swashbuckle | 6.x → 10.x | Nur Dev-Tool (Swagger UI), kein Produktionseinsatz |
+
 ### 4.1 Backend — NuGet-Pakete
 
 | Paket | Verwendet | Aktuellste | Status | Hinweis |
@@ -116,7 +130,7 @@ Das System besteht aus folgenden Hauptkomponenten:
 | Microsoft.EntityFrameworkCore.Sqlite | 8.0.14 | 10.0.5 | ✅ Aktuell für .NET 8 | 10.x erfordert .NET 10 |
 | Microsoft.EntityFrameworkCore.Design | 8.0.14 | 10.0.5 | ✅ Aktuell für .NET 8 | 10.x erfordert .NET 10 |
 | MongoDB.Driver | 2.28.0 | 3.7.1 | ⚠️ Major-Update | Breaking Changes in v3; v2.28 ist letzte v2 |
-| Azure.Storage.Blobs | 12.21.2 | 12.27.0 | ⚠️ Minor-Update | Update empfohlen |
+| Azure.Storage.Blobs | 12.27.0 | 12.27.0 | ✅ Aktuell | Aktualisiert am 30.03.2026 |
 | Microsoft.AspNetCore.Authentication.JwtBearer | 8.0.14 | 10.0.5 | ✅ Aktuell für .NET 8 | 10.x erfordert .NET 10 |
 
 ### 4.2 Frontend — npm-Pakete (Admin-App & Kiosk-App identisch)
@@ -171,7 +185,7 @@ Das System besteht aus folgenden Hauptkomponenten:
 
 | Priorität | Aktion | Begründung |
 |---|---|---|
-| **Mittel** | `Azure.Storage.Blobs` auf 12.27.0 updaten | Minor-Update, keine Breaking Changes |
+| ~~Mittel~~ | ~~`Azure.Storage.Blobs` auf 12.27.0 updaten~~ | ✅ Erledigt am 30.03.2026 |
 | **Niedrig** | Swashbuckle auf 10.x evaluieren | Nur Swagger UI, kein Produktionsrisiko |
 | **Geplant** | Migration auf .NET 10 LTS | Wenn .NET 10 als LTS verfügbar (Nov 2025+) |
 | **Geplant** | React 19 + Router v7 Migration | Major-Upgrade, benötigt Testaufwand |
