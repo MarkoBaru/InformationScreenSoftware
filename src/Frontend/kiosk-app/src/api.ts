@@ -16,10 +16,13 @@ export interface TileData {
   imageUrl: string | null
   linkUrl: string | null
   linkTarget: 'Embedded' | 'NewTab' | 'SameWindow'
-  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
+  contentType: 'Link' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream' | 'FullscreenImage' | 'Folder'
   articleBody: string | null
   sortOrder: number
   isActive: boolean
+  activeFrom: string | null
+  activeTo: string | null
+  parentTileId: number | null
   categoryId: number | null
   categoryName: string | null
 }

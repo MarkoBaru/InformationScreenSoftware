@@ -43,7 +43,7 @@ function buildSchichtplanUrl(baseUrl: string, monthName: string): string {
 
 interface ContentViewerProps {
   url?: string | null
-  contentType: 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
+  contentType: 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream' | 'Folder'
   articleBody?: string | null
   title?: string
   onBack: () => void
