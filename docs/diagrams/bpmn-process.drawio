@@ -1,0 +1,289 @@
+<mxfile host="app.diagrams.net" modified="2026-03-30T00:00:00.000Z" agent="InformationScreen Documentation" version="24.0.0" type="device">
+  <diagram id="bpmn-process" name="BPMN-Prozessdiagramm">
+    <mxGraphModel dx="1622" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="&lt;b&gt;BPMN-Prozessdiagramm — InformationScreen Content-Workflow&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="500" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ========== POOL: InformationScreen System ========== -->
+        <mxCell id="pool" value="InformationScreen System" style="shape=pool;startSize=30;horizontal=1;fillColor=none;strokeColor=#000000;fontSize=12;fontStyle=1;childLayout=stackLayout;horizontalStack=0;resizeParent=1;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="1570" height="700" as="geometry" />
+        </mxCell>
+
+        <!-- ========== LANE: Administrator ========== -->
+        <mxCell id="lane-admin" value="Administrator" style="swimlane;startSize=30;horizontal=0;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;collapsible=0;" vertex="1" parent="pool">
+          <mxGeometry y="30" width="1570" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Start Event -->
+        <mxCell id="start" value="" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.shape;perimeter=mxPerimeter.ellipsePerimeter;symbol=general;isLooping=0;isSequential=0;isGroup=0;isInstantiating=0;outline=standard;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="lane-admin">
+          <mxGeometry x="60" y="80" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="start-label" value="Start" style="text;html=1;align=center;verticalAlign=top;fontSize=10;strokeColor=none;fillColor=none;" vertex="1" parent="lane-admin">
+          <mxGeometry x="50" y="125" width="60" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Login -->
+        <mxCell id="task-login" value="Im Admin-Portal&lt;br&gt;anmelden" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-admin">
+          <mxGeometry x="140" y="70" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Gateway: Rolle -->
+        <mxCell id="gw-role" value="Rolle?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="lane-admin">
+          <mxGeometry x="310" y="75" width="60" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Screen verwalten -->
+        <mxCell id="task-screen" value="Screens&lt;br&gt;verwalten" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-admin">
+          <mxGeometry x="420" y="20" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Benutzer verwalten -->
+        <mxCell id="task-users" value="Benutzer&lt;br&gt;verwalten" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-admin">
+          <mxGeometry x="420" y="80" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Settings bearbeiten -->
+        <mxCell id="task-settings" value="Einstellungen&lt;br&gt;bearbeiten" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-admin">
+          <mxGeometry x="420" y="140" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Connections in Admin Lane -->
+        <mxCell id="f1" style="endArrow=block;endFill=1;html=1;" edge="1" source="start" target="task-login" parent="lane-admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f2" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-login" target="gw-role" parent="lane-admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f3" value="Admin" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-role" target="task-screen" parent="lane-admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f4" value="Admin" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-role" target="task-users" parent="lane-admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f5" value="Admin" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-role" target="task-settings" parent="lane-admin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========== LANE: Editor ========== -->
+        <mxCell id="lane-editor" value="Editor / Admin" style="swimlane;startSize=30;horizontal=0;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;collapsible=0;" vertex="1" parent="pool">
+          <mxGeometry y="230" width="1570" height="230" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Content erstellen -->
+        <mxCell id="task-content" value="Neuen Content&lt;br&gt;erstellen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="140" y="80" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Gateway: Content-Typ? -->
+        <mxCell id="gw-content" value="Content-Typ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="lane-editor">
+          <mxGeometry x="320" y="82" width="70" height="56" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Bild/Video hochladen -->
+        <mxCell id="task-media" value="Bild / Video&lt;br&gt;hochladen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="440" y="20" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Text/HTML eingeben -->
+        <mxCell id="task-text" value="Text / HTML&lt;br&gt;eingeben" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="440" y="80" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Fullscreen-Image -->
+        <mxCell id="task-fullscreen" value="Fullscreen-Image&lt;br&gt;konfigurieren" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="440" y="140" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Gateway: Merge -->
+        <mxCell id="gw-merge" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane-editor">
+          <mxGeometry x="620" y="85" width="40" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Screen zuweisen -->
+        <mxCell id="task-assign" value="Content einem&lt;br&gt;Screen zuweisen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="710" y="80" width="140" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Reihenfolge festlegen -->
+        <mxCell id="task-order" value="Reihenfolge&lt;br&gt;festlegen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="900" y="80" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Speichern -->
+        <mxCell id="task-save" value="Änderungen&lt;br&gt;speichern" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-editor">
+          <mxGeometry x="1080" y="80" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Connections in Editor Lane -->
+        <mxCell id="f10" value="Editor/Admin" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="110" as="sourcePoint" />
+            <mxPoint x="140" y="110" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f11" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-content" target="gw-content" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f12" value="Media" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-content" target="task-media" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f13" value="Text/HTML" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-content" target="task-text" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f14" value="Image" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-content" target="task-fullscreen" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f15" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-media" target="gw-merge" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f16" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-text" target="gw-merge" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f17" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-fullscreen" target="gw-merge" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f18" style="endArrow=block;endFill=1;html=1;" edge="1" source="gw-merge" target="task-assign" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f19" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-assign" target="task-order" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f20" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-order" target="task-save" parent="lane-editor">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ========== LANE: Kiosk-Terminal ========== -->
+        <mxCell id="lane-kiosk" value="Kiosk-Terminal" style="swimlane;startSize=30;horizontal=0;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;collapsible=0;" vertex="1" parent="pool">
+          <mxGeometry y="460" width="1570" height="210" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Content laden -->
+        <mxCell id="task-load" value="Content vom&lt;br&gt;Backend laden" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="140" y="70" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Content anzeigen -->
+        <mxCell id="task-display" value="Content&lt;br&gt;anzeigen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="330" y="70" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Timer Event: Idle -->
+        <mxCell id="timer" value="" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.shape;perimeter=mxPerimeter.ellipsePerimeter;symbol=timer;isLooping=0;isSequential=0;isGroup=0;isInstantiating=0;outline=catching;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="510" y="80" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="timer-label" value="Idle-&lt;br&gt;Timeout" style="text;html=1;align=center;verticalAlign=top;fontSize=9;strokeColor=none;fillColor=none;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="495" y="125" width="70" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Idle Overlay -->
+        <mxCell id="task-idle" value="Idle-Overlay&lt;br&gt;anzeigen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="600" y="70" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Event: Touch -->
+        <mxCell id="msg-touch" value="" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.shape;perimeter=mxPerimeter.ellipsePerimeter;symbol=message;isLooping=0;isSequential=0;isGroup=0;isInstantiating=0;outline=catching;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="780" y="80" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="msg-touch-label" value="Touch-&lt;br&gt;Event" style="text;html=1;align=center;verticalAlign=top;fontSize=9;strokeColor=none;fillColor=none;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="770" y="125" width="60" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Gateway: Stream aktiv? -->
+        <mxCell id="gw-stream" value="Stream?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="870" y="75" width="60" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Task: Stream anzeigen -->
+        <mxCell id="task-stream" value="RTSP-Stream&lt;br&gt;anzeigen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="980" y="20" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Loop-Back -->
+        <mxCell id="task-loop" value="Nächsten Content&lt;br&gt;anzeigen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="980" y="110" width="130" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- End Event -->
+        <mxCell id="end" value="" style="points=[[0.145,0.145,0],[0.5,0,0],[0.855,0.145,0],[1,0.5,0],[0.855,0.855,0],[0.5,1,0],[0.145,0.855,0],[0,0.5,0]];shape=mxgraph.bpmn.shape;perimeter=mxPerimeter.ellipsePerimeter;symbol=terminate;isLooping=0;isSequential=0;isGroup=0;isInstantiating=0;outline=end;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="1160" y="80" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="end-label" value="Terminal&lt;br&gt;herunterfahren" style="text;html=1;align=center;verticalAlign=top;fontSize=9;strokeColor=none;fillColor=none;" vertex="1" parent="lane-kiosk">
+          <mxGeometry x="1135" y="125" width="90" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Connections in Kiosk Lane -->
+        <mxCell id="f30" style="endArrow=block;endFill=1;html=1;" edge="1" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="80" y="100" as="sourcePoint" />
+            <mxPoint x="140" y="100" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f31" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-load" target="task-display" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f32" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-display" target="timer" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f33" style="endArrow=block;endFill=1;html=1;" edge="1" source="timer" target="task-idle" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f34" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-idle" target="msg-touch" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f35" style="endArrow=block;endFill=1;html=1;" edge="1" source="msg-touch" target="gw-stream" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f36" value="Ja" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-stream" target="task-stream" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f37" value="Nein" style="endArrow=block;endFill=1;html=1;fontSize=9;" edge="1" source="gw-stream" target="task-loop" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="f38" style="endArrow=block;endFill=1;html=1;curved=1;" edge="1" source="task-loop" target="task-display" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1045" y="180" />
+              <mxPoint x="395" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="f39" style="endArrow=block;endFill=1;html=1;" edge="1" source="task-stream" target="end" parent="lane-kiosk">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1180" y="45" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== DATA STORE (outside lanes) ========== -->
+        <mxCell id="ds-cosmos" value="Azure Cosmos DB&lt;br&gt;(MongoDB)" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ds-blob" value="Azure Blob&lt;br&gt;Storage" style="shape=datastore;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="430" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Data associations -->
+        <mxCell id="da1" value="speichern" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1250" y="390" as="sourcePoint" />
+            <mxPoint x="1420" y="370" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="da2" value="hochladen" style="endArrow=open;endFill=0;dashed=1;html=1;fontSize=9;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1250" y="420" as="sourcePoint" />
+            <mxPoint x="1420" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
