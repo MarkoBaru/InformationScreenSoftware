@@ -11,10 +11,20 @@ public class MongoContext
     public MongoContext(string connectionString, string databaseName = "informationscreen")
     {
         Console.WriteLine($"[MongoContext] Connecting to database '{databaseName}'...");
-        var client = new MongoClient(connectionString);
+        var settings = MongoClientSettings.FromConnectionString(connectionString);
+        settings.ServerSelectionTimeout = TimeSpan.FromSeconds(10);
+        settings.ConnectTimeout = TimeSpan.FromSeconds(10);
+        var client = new MongoClient(settings);
         _database = client.GetDatabase(databaseName);
-        EnsureIndexes();
-        Console.WriteLine($"[MongoContext] Connected and indexes ensured.");
+        try
+        {
+            EnsureIndexes();
+            Console.WriteLine($"[MongoContext] Connected and indexes ensured.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[MongoContext] WARNING: EnsureIndexes failed (non-fatal): {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     public IMongoCollection<T> GetCollection<T>(string name) =>

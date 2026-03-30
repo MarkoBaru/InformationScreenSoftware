@@ -37,7 +37,8 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
         mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "informationscreen";
 
     Console.WriteLine($"[STARTUP] MongoDB Database = {mongoDatabaseName}");
-    Console.WriteLine($"[STARTUP] MongoDB Host = {new Uri(mongoConnectionString.Replace("mongodb://", "http://").Split(',')[0]).Host}");
+    Console.WriteLine($"[STARTUP] MongoDB Connection String Length = {mongoConnectionString.Length}");
+    Console.WriteLine($"[STARTUP] MongoDB Connection String starts with = {mongoConnectionString.Substring(0, Math.Min(40, mongoConnectionString.Length))}...");
 
     builder.Services.AddSingleton(new MongoContext(mongoConnectionString, mongoDatabaseName));
     builder.Services.AddScoped<IScreenService, MongoScreenService>();
