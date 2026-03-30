@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace InformationScreen.Api.Services.Mongo;
 
@@ -9,13 +10,55 @@ public class MongoContext
 
     public MongoContext(string connectionString, string databaseName = "informationscreen")
     {
+        Console.WriteLine($"[MongoContext] Connecting to database '{databaseName}'...");
         var client = new MongoClient(connectionString);
         _database = client.GetDatabase(databaseName);
         EnsureIndexes();
+        Console.WriteLine($"[MongoContext] Connected and indexes ensured.");
     }
 
     public IMongoCollection<T> GetCollection<T>(string name) =>
         _database.GetCollection<T>(name);
+
+    /// <summary>Test write+read against the database. Returns diagnostic info.</summary>
+    public async Task<string> DiagnoseAsync()
+    {
+        var diag = new System.Text.StringBuilder();
+        try
+        {
+            diag.AppendLine($"Database: {_database.DatabaseNamespace.DatabaseName}");
+
+            // List collections
+            var collections = await _database.ListCollectionNamesAsync();
+            var names = await collections.ToListAsync();
+            diag.AppendLine($"Collections: {string.Join(", ", names)}");
+
+            // Test counter write
+            var id = await GetNextIdAsync("_diag_test");
+            diag.AppendLine($"Counter write OK: _diag_test seq={id}");
+
+            // Test document write
+            var testCol = _database.GetCollection<BsonDocument>("_diag_test");
+            var doc = new BsonDocument { { "_id", id }, { "ts", DateTime.UtcNow } };
+            await testCol.InsertOneAsync(doc);
+            diag.AppendLine($"InsertOne OK: _id={id}");
+
+            // Test document read
+            var read = await testCol.Find(Builders<BsonDocument>.Filter.Eq("_id", id)).FirstOrDefaultAsync();
+            diag.AppendLine(read != null ? $"Read OK: {read}" : "Read FAILED: document not found");
+
+            // Cleanup
+            await testCol.DeleteOneAsync(Builders<BsonDocument>.Filter.Eq("_id", id));
+            diag.AppendLine("Cleanup OK");
+        }
+        catch (Exception ex)
+        {
+            diag.AppendLine($"ERROR: {ex.GetType().Name}: {ex.Message}");
+            if (ex.InnerException != null)
+                diag.AppendLine($"INNER: {ex.InnerException.GetType().Name}: {ex.InnerException.Message}");
+        }
+        return diag.ToString();
+    }
 
     public async Task<int> GetNextIdAsync(string collectionName)
     {
@@ -54,6 +97,8 @@ public class MongoContext
 // MongoDB document models
 public class MongoScreen
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
@@ -74,6 +119,8 @@ public class MongoScreenTile
 
 public class MongoTile
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
     public int Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
@@ -94,6 +141,8 @@ public class MongoTile
 
 public class MongoCategory
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? IconUrl { get; set; }
@@ -102,6 +151,8 @@ public class MongoCategory
 
 public class MongoMediaAsset
 {
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
     public int Id { get; set; }
     public string FileName { get; set; } = string.Empty;
     public string FilePath { get; set; } = string.Empty;

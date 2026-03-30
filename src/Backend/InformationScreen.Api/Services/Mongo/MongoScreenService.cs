@@ -54,7 +54,17 @@ public class MongoScreenService : IScreenService
             IdleTimeoutSeconds = request.IdleTimeoutSeconds
         };
 
-        await Screens.InsertOneAsync(screen);
+        Console.WriteLine($"[MongoScreenService] Inserting screen Id={screen.Id}, Name={screen.Name}");
+        try
+        {
+            await Screens.InsertOneAsync(screen);
+            Console.WriteLine($"[MongoScreenService] Insert OK for screen Id={screen.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[MongoScreenService] Insert FAILED: {ex.GetType().Name}: {ex.Message}");
+            throw;
+        }
 
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,

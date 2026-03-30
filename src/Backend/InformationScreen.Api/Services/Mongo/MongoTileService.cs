@@ -51,7 +51,17 @@ public class MongoTileService : ITileService
             CategoryId = request.CategoryId
         };
 
-        await Tiles.InsertOneAsync(tile);
+        Console.WriteLine($"[MongoTileService] Inserting tile Id={tile.Id}, Title={tile.Title}");
+        try
+        {
+            await Tiles.InsertOneAsync(tile);
+            Console.WriteLine($"[MongoTileService] Insert OK for tile Id={tile.Id}");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[MongoTileService] Insert FAILED: {ex.GetType().Name}: {ex.Message}");
+            throw;
+        }
 
         // Assign to screens
         if (request.ScreenIds?.Count > 0)

@@ -21,6 +21,8 @@ var databaseProvider = Environment.GetEnvironmentVariable("DATABASE_PROVIDER");
 if (string.IsNullOrEmpty(databaseProvider))
     databaseProvider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 
+Console.WriteLine($"[STARTUP] DATABASE_PROVIDER = {databaseProvider}");
+
 if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
 {
     // MongoDB / Cosmos DB MongoDB API
@@ -33,6 +35,9 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
     var mongoDatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE");
     if (string.IsNullOrEmpty(mongoDatabaseName))
         mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "informationscreen";
+
+    Console.WriteLine($"[STARTUP] MongoDB Database = {mongoDatabaseName}");
+    Console.WriteLine($"[STARTUP] MongoDB Host = {new Uri(mongoConnectionString.Replace("mongodb://", "http://").Split(',')[0]).Host}");
 
     builder.Services.AddSingleton(new MongoContext(mongoConnectionString, mongoDatabaseName));
     builder.Services.AddScoped<IScreenService, MongoScreenService>();
@@ -62,12 +67,12 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
 builder.Services.AddScoped<AuthService>();
 
 // JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"]
-    ?? Environment.GetEnvironmentVariable("JWT_KEY")
-    ?? "InfoScreen-Default-SuperSecret-Key-Min32Chars!!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"]
-    ?? Environment.GetEnvironmentVariable("JWT_ISSUER")
-    ?? "InformationScreen";
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
+if (string.IsNullOrEmpty(jwtKey))
+    jwtKey = builder.Configuration["Jwt:Key"] ?? "InfoScreen-Default-SuperSecret-Key-Min32Chars!!";
+var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+if (string.IsNullOrEmpty(jwtIssuer))
+    jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "InformationScreen";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
