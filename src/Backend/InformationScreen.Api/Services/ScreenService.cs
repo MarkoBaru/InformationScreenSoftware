@@ -39,6 +39,9 @@ public class ScreenService : IScreenService
                 st.Tile.ArticleBody,
                 st.SortOrderOverride ?? st.Tile.SortOrder,
                 st.Tile.IsActive,
+                st.Tile.ActiveFrom,
+                st.Tile.ActiveTo,
+                st.Tile.ParentTileId,
                 st.Tile.CategoryId,
                 st.Tile.Category?.Name
             ))
@@ -80,7 +83,11 @@ public class ScreenService : IScreenService
                 st.Tile.ImageUrl, st.Tile.ContentType, st.Tile.LinkUrl, st.Tile.LinkTarget,
                 st.Tile.ArticleBody,
                 st.SortOrderOverride ?? st.Tile.SortOrder,
-                st.Tile.IsActive, st.Tile.CategoryId, st.Tile.Category?.Name
+                st.Tile.IsActive,
+                st.Tile.ActiveFrom,
+                st.Tile.ActiveTo,
+                st.Tile.ParentTileId,
+                st.Tile.CategoryId, st.Tile.Category?.Name
             ))
             .ToList();
 

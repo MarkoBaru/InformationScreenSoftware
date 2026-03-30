@@ -142,7 +142,11 @@ public class MongoScreenService : IScreenService
                     Enum.Parse<LinkTarget>(t.LinkTarget),
                     t.ArticleBody,
                     st.SortOrderOverride ?? t.SortOrder,
-                    t.IsActive, t.CategoryId, catName
+                    t.IsActive,
+                    t.ActiveFrom,
+                    t.ActiveTo,
+                    t.ParentTileId,
+                    t.CategoryId, catName
                 );
             })
             .OrderBy(t => t.SortOrder)

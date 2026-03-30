@@ -15,7 +15,8 @@ public enum ContentType
     Pdf,
     Article,
     Schichtplan,
-    Stream
+    Stream,
+    Folder
 }
 
 public class Tile
@@ -30,8 +31,14 @@ public class Tile
     public string? ArticleBody { get; set; }
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime? ActiveFrom { get; set; }
+    public DateTime? ActiveTo { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public int? ParentTileId { get; set; }
+    public Tile? ParentTile { get; set; }
+    public ICollection<Tile> ChildTiles { get; set; } = new List<Tile>();
 
     public int? CategoryId { get; set; }
     public Category? Category { get; set; }

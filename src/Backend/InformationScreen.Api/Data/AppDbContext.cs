@@ -36,6 +36,10 @@ public class AppDbContext : DbContext
              .WithMany(c => c.Tiles)
              .HasForeignKey(t => t.CategoryId)
              .OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(t => t.ParentTile)
+             .WithMany(t => t.ChildTiles)
+             .HasForeignKey(t => t.ParentTileId)
+             .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ScreenTile>(e =>

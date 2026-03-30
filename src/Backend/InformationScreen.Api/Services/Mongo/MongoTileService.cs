@@ -45,6 +45,9 @@ public class MongoTileService : ITileService
             LinkTarget = request.LinkTarget.ToString(),
             ArticleBody = request.ArticleBody,
             SortOrder = request.SortOrder,
+            ActiveFrom = request.ActiveFrom,
+            ActiveTo = request.ActiveTo,
+            ParentTileId = request.ParentTileId,
             CategoryId = request.CategoryId
         };
 
@@ -76,6 +79,9 @@ public class MongoTileService : ITileService
             .Set(t => t.ArticleBody, request.ArticleBody)
             .Set(t => t.SortOrder, request.SortOrder)
             .Set(t => t.IsActive, request.IsActive)
+            .Set(t => t.ActiveFrom, request.ActiveFrom)
+            .Set(t => t.ActiveTo, request.ActiveTo)
+            .Set(t => t.ParentTileId, request.ParentTileId)
             .Set(t => t.CategoryId, request.CategoryId)
             .Set(t => t.UpdatedAt, DateTime.UtcNow);
 
@@ -152,6 +158,7 @@ public class MongoTileService : ITileService
                 t.LinkUrl,
                 Enum.Parse<LinkTarget>(t.LinkTarget),
                 t.ArticleBody, t.SortOrder, t.IsActive,
+                t.ActiveFrom, t.ActiveTo, t.ParentTileId,
                 t.CategoryId, catName,
                 screenNames ?? new List<string>()
             );

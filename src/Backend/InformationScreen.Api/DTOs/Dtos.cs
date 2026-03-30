@@ -55,6 +55,9 @@ public record TileDto(
     string? ArticleBody,
     int SortOrder,
     bool IsActive,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    int? ParentTileId,
     int? CategoryId,
     string? CategoryName
 );
@@ -70,6 +73,9 @@ public record TileListDto(
     string? ArticleBody,
     int SortOrder,
     bool IsActive,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    int? ParentTileId,
     int? CategoryId,
     string? CategoryName,
     List<string> AssignedScreens
@@ -84,6 +90,9 @@ public record CreateTileRequest(
     LinkTarget LinkTarget,
     string? ArticleBody,
     int SortOrder,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    int? ParentTileId,
     int? CategoryId,
     List<int>? ScreenIds
 );
@@ -98,6 +107,9 @@ public record UpdateTileRequest(
     string? ArticleBody,
     int SortOrder,
     bool IsActive,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    int? ParentTileId,
     int? CategoryId,
     List<int>? ScreenIds
 );

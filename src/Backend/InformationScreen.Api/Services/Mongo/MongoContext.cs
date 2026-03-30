@@ -84,6 +84,9 @@ public class MongoTile
     public string? ArticleBody { get; set; }
     public int SortOrder { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime? ActiveFrom { get; set; }
+    public DateTime? ActiveTo { get; set; }
+    public int? ParentTileId { get; set; }
     public int? CategoryId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
