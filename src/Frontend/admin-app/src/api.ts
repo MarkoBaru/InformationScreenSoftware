@@ -50,6 +50,8 @@ export interface Tile {
   imageUrl: string | null; linkUrl: string | null; linkTarget: string;
   contentType: string; articleBody: string | null;
   sortOrder: number; isActive: boolean;
+  activeFrom: string | null; activeTo: string | null;
+  parentTileId: number | null;
   categoryId: number | null; categoryName: string | null;
 }
 
@@ -83,9 +85,9 @@ export const screensApi = {
 export const tilesApi = {
   list: () => request<TileList[]>(`${API}/tiles`),
   get: (id: number) => request<TileList>(`${API}/tiles/${id}`),
-  create: (data: { title: string; description?: string; imageUrl?: string; linkUrl?: string; linkTarget: string; contentType: string; articleBody?: string; sortOrder: number; categoryId?: number; screenIds?: number[] }) =>
+  create: (data: { title: string; description?: string; imageUrl?: string; linkUrl?: string; linkTarget: string; contentType: string; articleBody?: string; sortOrder: number; activeFrom?: string; activeTo?: string; parentTileId?: number; categoryId?: number; screenIds?: number[] }) =>
     request<TileList>(`${API}/tiles`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: { title: string; description?: string; imageUrl?: string; linkUrl?: string; linkTarget: string; contentType: string; articleBody?: string; sortOrder: number; isActive: boolean; categoryId?: number; screenIds?: number[] }) =>
+  update: (id: number, data: { title: string; description?: string; imageUrl?: string; linkUrl?: string; linkTarget: string; contentType: string; articleBody?: string; sortOrder: number; isActive: boolean; activeFrom?: string; activeTo?: string; parentTileId?: number; categoryId?: number; screenIds?: number[] }) =>
     request<TileList>(`${API}/tiles/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/tiles/${id}`, { method: 'DELETE' }),
 }

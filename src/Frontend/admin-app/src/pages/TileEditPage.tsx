@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, MediaAsset } from '../api'
+import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, MediaAsset, TileList } from '../api'
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
-type ContentType = 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream'
+type ContentType = 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'Schichtplan' | 'Stream' | 'Folder'
 
 export default function TileEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,6 +20,9 @@ export default function TileEditPage() {
   const [articleBody, setArticleBody] = useState('')
   const [sortOrder, setSortOrder] = useState(0)
   const [isActive, setIsActive] = useState(true)
+  const [activeFrom, setActiveFrom] = useState('')
+  const [activeTo, setActiveTo] = useState('')
+  const [parentTileId, setParentTileId] = useState<number | ''>('')
   const [categoryId, setCategoryId] = useState<number | ''>('')
   const [screenIds, setScreenIds] = useState<Set<number>>(new Set())
   const [allScreens, setAllScreens] = useState<ScreenList[]>([])
@@ -28,6 +31,7 @@ export default function TileEditPage() {
   const [showMediaPicker, setShowMediaPicker] = useState<'button' | 'article' | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [allTiles, setAllTiles] = useState<TileList[]>([])
 
   // Schichtplan-spezifische Felder
   const [spBaseUrl, setSpBaseUrl] = useState('https://abb.sharepoint.com/teams/CHCMC-Produktion9/_layouts/15/Doc.aspx?sourcedoc={DOCUMENT-ID}')
@@ -37,6 +41,7 @@ export default function TileEditPage() {
   useEffect(() => {
     screensApi.list().then(setAllScreens).catch(() => {})
     categoriesApi.list().then(setAllCategories).catch(() => {})
+    tilesApi.list().then(setAllTiles).catch(() => {})
 
     if (!isNew) {
       tilesApi.get(Number(id)).then((t) => {
@@ -58,6 +63,9 @@ export default function TileEditPage() {
         }
         setSortOrder(t.sortOrder)
         setIsActive(t.isActive)
+        setActiveFrom(t.activeFrom ? t.activeFrom.substring(0, 16) : '')
+        setActiveTo(t.activeTo ? t.activeTo.substring(0, 16) : '')
+        setParentTileId(t.parentTileId ?? '')
         setCategoryId(t.categoryId ?? '')
         screensApi.list().then((screens) => {
           const ids = new Set(
@@ -109,11 +117,14 @@ export default function TileEditPage() {
       const data = {
         title, description: description || undefined,
         imageUrl: imageUrl || undefined,
-        linkUrl: (contentType === 'Article' || contentType === 'Schichtplan') ? undefined : (linkUrl || undefined),
+        linkUrl: (contentType === 'Article' || contentType === 'Schichtplan' || contentType === 'Folder') ? undefined : (linkUrl || undefined),
         linkTarget,
         contentType,
         articleBody: contentType === 'Article' ? articleBody : (contentType === 'Schichtplan' ? schichtplanConfig : undefined),
         sortOrder, categoryId: categoryId === '' ? undefined : categoryId,
+        activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
+        activeTo: activeTo ? new Date(activeTo).toISOString() : undefined,
+        parentTileId: parentTileId === '' ? undefined : parentTileId,
         screenIds: Array.from(screenIds),
       }
 
@@ -230,6 +241,7 @@ export default function TileEditPage() {
               ['Article', 'Beitrag'],
               ['Schichtplan', 'Schichtplan'],
               ['Stream', 'Stream'],
+              ['Folder', 'Ordner'],
             ] as [ContentType, string][]).map(([val, label]) => (
               <label key={val} style={{
                 display: 'flex', alignItems: 'center', gap: 4,
@@ -444,6 +456,15 @@ export default function TileEditPage() {
           </div>
         )}
 
+        {/* FOLDER / Ordner */}
+        {contentType === 'Folder' && (
+          <div className="form-group">
+            <p style={{ padding: '12px 16px', background: 'var(--primary-light, #e8f0fe)', borderRadius: 6, color: 'var(--text)', margin: 0 }}>
+              Dieser Inhalt wird als Ordner angezeigt. Im Kiosk-Modus öffnet ein Klick darauf eine Unterseite mit allen Inhalten, die diesem Ordner zugeordnet sind. Ordner können auch verschachtelt werden.
+            </p>
+          </div>
+        )}
+
         {/* Common fields continued */}
         <div className="form-group">
           <label>Sortierung</label>
@@ -468,6 +489,41 @@ export default function TileEditPage() {
             </label>
           </div>
         )}
+
+        <div className="form-group">
+          <label>Aktiv schalten zwischen</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="datetime-local"
+              value={activeFrom}
+              onChange={(e) => setActiveFrom(e.target.value)}
+              style={{ flex: 1, minWidth: 180 }}
+            />
+            <span>bis</span>
+            <input
+              type="datetime-local"
+              value={activeTo}
+              onChange={(e) => setActiveTo(e.target.value)}
+              style={{ flex: 1, minWidth: 180 }}
+            />
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
+            Leer lassen = immer aktiv (sofern Aktiv-Toggle an ist). Wird nur einer der Werte gesetzt, gilt dieser als einzige Grenze.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label>Übergeordneter Ordner</label>
+          <select value={parentTileId} onChange={(e) => setParentTileId(e.target.value === '' ? '' : Number(e.target.value))}>
+            <option value="">Kein Ordner (Hauptebene)</option>
+            {allTiles.filter(t => t.contentType === 'Folder' && t.id !== Number(id)).map((t) => (
+              <option key={t.id} value={t.id}>{t.title}</option>
+            ))}
+          </select>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
+            Diesem Inhalt einem Ordner zuweisen, um ihn als Unterinhalt anzuzeigen.
+          </p>
+        </div>
 
         <div className="form-group">
           <label>Screens zuweisen</label>
