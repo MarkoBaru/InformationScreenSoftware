@@ -1,0 +1,5 @@
+6d977f2 feat: go2rtc durch RTSPtoWeb ersetzt - RTSP-Streams funktionieren jetzt im Browser via MSE
+538df1f feat(deploy): Add azure-update.ps1 for safe Container Apps updates
+eb4f354 feat(kiosk): StreamPlayer fetches RTSPtoWeb URL from settings API
+86e9400 refactor(kiosk): IdleOverlay uses ContentViewer for tile rotation
+75ec2a9 feat: Add FullscreenImage content type for tiles
