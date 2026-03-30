@@ -16,19 +16,23 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 // Database provider: "Sqlite" (default) or "MongoDB"
-var databaseProvider = builder.Configuration["DatabaseProvider"]
-    ?? Environment.GetEnvironmentVariable("DATABASE_PROVIDER")
-    ?? "Sqlite";
+// Env-Variable hat Vorrang vor appsettings.json (wichtig fuer Azure Container Apps)
+var databaseProvider = Environment.GetEnvironmentVariable("DATABASE_PROVIDER");
+if (string.IsNullOrEmpty(databaseProvider))
+    databaseProvider = builder.Configuration["DatabaseProvider"] ?? "Sqlite";
 
 if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
 {
     // MongoDB / Cosmos DB MongoDB API
-    var mongoConnectionString = builder.Configuration["MongoDB:ConnectionString"]
-        ?? Environment.GetEnvironmentVariable("MONGODB_CONNECTION")
-        ?? "mongodb://localhost:27017";
-    var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"]
-        ?? Environment.GetEnvironmentVariable("MONGODB_DATABASE")
-        ?? "informationscreen";
+    var mongoConnectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION");
+    if (string.IsNullOrEmpty(mongoConnectionString))
+        mongoConnectionString = builder.Configuration["MongoDB:ConnectionString"];
+    if (string.IsNullOrEmpty(mongoConnectionString))
+        mongoConnectionString = "mongodb://localhost:27017";
+
+    var mongoDatabaseName = Environment.GetEnvironmentVariable("MONGODB_DATABASE");
+    if (string.IsNullOrEmpty(mongoDatabaseName))
+        mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "informationscreen";
 
     builder.Services.AddSingleton(new MongoContext(mongoConnectionString, mongoDatabaseName));
     builder.Services.AddScoped<IScreenService, MongoScreenService>();
