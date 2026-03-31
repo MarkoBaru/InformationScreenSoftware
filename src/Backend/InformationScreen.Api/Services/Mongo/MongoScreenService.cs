@@ -31,7 +31,7 @@ public class MongoScreenService : IScreenService
         return screens.Select(s => new ScreenListDto(
             s.Id, s.Name, s.Slug,
             Enum.Parse<DefaultContentType>(s.DefaultContentType),
-            s.IdleTimeoutSeconds, s.IsActive, s.Tiles.Count
+            s.IdleTimeoutSeconds, s.IsActive, s.Tiles?.Count ?? 0
         )).ToList();
     }
 
