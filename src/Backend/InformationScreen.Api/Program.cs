@@ -137,8 +137,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto-migrate on startup (SQLite only)
-if (databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+// Auto-migrate SQLite on startup (always needed – auth uses SQLite in both modes)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
