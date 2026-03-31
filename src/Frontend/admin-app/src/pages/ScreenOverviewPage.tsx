@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { screensApi, Screen, ScreenList, Tile, tilesApi, TileList } from '../api'
 import './PageStyles.css'
@@ -201,6 +201,115 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
   )
 }
 
+function FolderSortPanel({ folderId, children: folderChildren, onChanged }: {
+  folderId: number
+  children: Tile[]
+  onChanged: () => void
+}) {
+  const [items, setItems] = useState<Tile[]>(() =>
+    [...folderChildren].sort((a, b) => a.sortOrder - b.sortOrder)
+  )
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const dragIdx = useRef<number | null>(null)
+  const overIdx = useRef<number | null>(null)
+
+  useEffect(() => {
+    setItems([...folderChildren].sort((a, b) => a.sortOrder - b.sortOrder))
+    setSaved(false)
+  }, [folderChildren])
+
+  const handleDragStart = (idx: number) => { dragIdx.current = idx }
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault()
+    overIdx.current = idx
+  }
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const from = dragIdx.current
+    const to = overIdx.current
+    if (from === null || to === null || from === to) return
+    setItems(prev => {
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+    setSaved(false)
+    dragIdx.current = null
+    overIdx.current = null
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await Promise.all(items.map((tile, idx) => {
+        const newOrder = idx + 1
+        if (tile.sortOrder === newOrder) return Promise.resolve()
+        return tilesApi.update(tile.id, {
+          title: tile.title, description: tile.description || undefined,
+          imageUrl: tile.imageUrl || undefined, linkUrl: tile.linkUrl || undefined,
+          linkTarget: tile.linkTarget, contentType: tile.contentType,
+          articleBody: tile.articleBody || undefined, sortOrder: newOrder,
+          isActive: tile.isActive, activeFrom: tile.activeFrom || undefined,
+          activeTo: tile.activeTo || undefined, parentTileId: folderId,
+          categoryId: tile.categoryId || undefined,
+        })
+      }))
+      setSaved(true)
+      onChanged()
+    } catch (err) {
+      alert('Fehler: ' + (err as Error).message)
+    } finally { setSaving(false) }
+  }
+
+  const hasChanges = items.some((t, i) => t.sortOrder !== i + 1)
+
+  return (
+    <div style={{ margin: '4px 0 8px', border: '1px solid #e0e0e0', borderRadius: 8, background: '#fafafa' }}>
+      <div style={{ padding: '6px 10px', fontSize: '0.78rem', color: '#666', borderBottom: '1px solid #eee' }}>
+        Ziehe Einträge mit ⠿ um die Reihenfolge zu ändern
+      </div>
+      <div style={{ maxHeight: 260, overflowY: 'auto', padding: '4px' }}>
+        {items.length === 0 && (
+          <div style={{ padding: 12, textAlign: 'center', color: '#999', fontSize: '0.8rem' }}>Keine Inhalte im Ordner.</div>
+        )}
+        {items.map((t, idx) => (
+          <div
+            key={t.id}
+            draggable
+            onDragStart={() => handleDragStart(idx)}
+            onDragOver={e => handleDragOver(e, idx)}
+            onDrop={handleDrop}
+            className="folder-child-row"
+            style={{ padding: '5px 8px', fontSize: '0.82rem', cursor: 'grab', userSelect: 'none' }}
+          >
+            <span style={{ cursor: 'grab', marginRight: 6, color: '#aaa', fontSize: '1rem' }}>⠿</span>
+            <span style={{ fontSize: '0.75rem', color: '#999', minWidth: 18, textAlign: 'right', marginRight: 6 }}>{idx + 1}</span>
+            <span style={{ fontSize: '0.8rem' }}>{CONTENT_ICONS[t.contentType] || '📎'}</span>
+            <span style={{ flex: 1, fontSize: '0.82rem', marginLeft: 4 }}>{t.title}</span>
+            <span style={{ fontSize: '0.7rem', color: '#888' }}>{t.contentType}</span>
+          </div>
+        ))}
+      </div>
+      {items.length > 0 && (
+        <div style={{ padding: '6px 10px', borderTop: '1px solid #eee', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button
+            className="btn btn--primary btn--small"
+            disabled={saving || !hasChanges}
+            onClick={handleSave}
+            style={{ fontSize: '0.8rem', padding: '3px 14px' }}
+          >
+            {saving ? 'Speichern...' : 'Speichern'}
+          </button>
+          {saved && <span style={{ fontSize: '0.78rem', color: '#2e7d32' }}>Gespeichert!</span>}
+          {!hasChanges && !saved && <span style={{ fontSize: '0.78rem', color: '#999' }}>Keine Änderungen</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged, screenId, allScreens }: {
   node: TreeNode
   depth: number
@@ -217,6 +326,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
   const icon = CONTENT_ICONS[t.contentType] || '📎'
   const summary = contentSummary(t)
   const [showPicker, setShowPicker] = useState(false)
+  const [showSorter, setShowSorter] = useState(false)
 
   return (
     <>
@@ -253,14 +363,26 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
         </span>
 
         {t.contentType === 'Folder' && (
-          <button
-            className="btn btn--small"
-            style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
-            onClick={(e) => { e.stopPropagation(); setShowPicker(p => !p) }}
-            title="Inhalte zuweisen"
-          >
-            {showPicker ? '−' : '+'}
-          </button>
+          <>
+            <button
+              className="btn btn--small"
+              style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
+              onClick={(e) => { e.stopPropagation(); setShowPicker(p => !p); if (!showPicker) setShowSorter(false) }}
+              title="Inhalte zuweisen"
+            >
+              {showPicker ? '−' : '+'}
+            </button>
+            {hasChildren && (
+              <button
+                className="btn btn--small"
+                style={{ marginLeft: 2, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
+                onClick={(e) => { e.stopPropagation(); setShowSorter(p => !p); if (!showSorter) setShowPicker(false) }}
+                title="Reihenfolge ändern"
+              >
+                {showSorter ? '−' : '↕'}
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -273,6 +395,12 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
       {showPicker && (
         <div style={{ paddingLeft: depth * 28 + 52, paddingRight: 12 }}>
           <FolderChildPicker folderId={t.id} allTiles={allTiles} onChanged={onTilesChanged} screenId={screenId} allScreens={allScreens} />
+        </div>
+      )}
+
+      {showSorter && (
+        <div style={{ paddingLeft: depth * 28 + 52, paddingRight: 12 }}>
+          <FolderSortPanel folderId={t.id} children={node.children.map(c => c.tile)} onChanged={onTilesChanged} />
         </div>
       )}
 
