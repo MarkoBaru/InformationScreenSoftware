@@ -201,8 +201,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
   )
 }
 
-function FolderSortPanel({ folderId, children: folderChildren, onChanged }: {
-  folderId: number
+function FolderSortPanel({ children: folderChildren, onChanged }: {
   children: Tile[]
   onChanged: () => void
 }) {
@@ -252,7 +251,7 @@ function FolderSortPanel({ folderId, children: folderChildren, onChanged }: {
           linkTarget: tile.linkTarget, contentType: tile.contentType,
           articleBody: tile.articleBody || undefined, sortOrder: newOrder,
           isActive: tile.isActive, activeFrom: tile.activeFrom || undefined,
-          activeTo: tile.activeTo || undefined, parentTileId: folderId,
+          activeTo: tile.activeTo || undefined, parentTileId: tile.parentTileId ?? undefined,
           categoryId: tile.categoryId || undefined,
         })
       }))
@@ -363,26 +362,25 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
         </span>
 
         {t.contentType === 'Folder' && (
-          <>
-            <button
-              className="btn btn--small"
-              style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
-              onClick={(e) => { e.stopPropagation(); setShowPicker(p => !p); if (!showPicker) setShowSorter(false) }}
-              title="Inhalte zuweisen"
-            >
-              {showPicker ? '−' : '+'}
-            </button>
-            {hasChildren && (
-              <button
-                className="btn btn--small"
-                style={{ marginLeft: 2, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
-                onClick={(e) => { e.stopPropagation(); setShowSorter(p => !p); if (!showSorter) setShowPicker(false) }}
-                title="Reihenfolge ändern"
-              >
-                {showSorter ? '−' : '↕'}
-              </button>
-            )}
-          </>
+          <button
+            className="btn btn--small"
+            style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
+            onClick={(e) => { e.stopPropagation(); setShowPicker(p => !p); if (!showPicker) setShowSorter(false) }}
+            title="Inhalte zuweisen"
+          >
+            {showPicker ? '−' : '+'}
+          </button>
+        )}
+
+        {hasChildren && (
+          <button
+            className="btn btn--small"
+            style={{ marginLeft: 2, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
+            onClick={(e) => { e.stopPropagation(); setShowSorter(p => !p); if (!showSorter) setShowPicker(false) }}
+            title="Reihenfolge ändern"
+          >
+            {showSorter ? '−' : '↕'}
+          </button>
         )}
       </div>
 
@@ -400,7 +398,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
 
       {showSorter && (
         <div style={{ paddingLeft: depth * 28 + 52, paddingRight: 12 }}>
-          <FolderSortPanel folderId={t.id} children={node.children.map(c => c.tile)} onChanged={onTilesChanged} />
+          <FolderSortPanel children={node.children.map(c => c.tile)} onChanged={onTilesChanged} />
         </div>
       )}
 
@@ -427,6 +425,7 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const [showRootSort, setShowRootSort] = useState(false)
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -506,7 +505,17 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
           <div className="tree-toolbar">
             <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
             <button className="btn btn--small" onClick={() => setExpanded(new Set())}>Alle einklappen</button>
+            {roots.length > 1 && (
+              <button className="btn btn--small" onClick={() => setShowRootSort(p => !p)} style={{ marginLeft: 'auto' }}>
+                {showRootSort ? '− Sortierung schliessen' : '↕ Inhalte sortieren'}
+              </button>
+            )}
           </div>
+          {showRootSort && (
+            <div style={{ padding: '0 12px 8px' }}>
+              <FolderSortPanel children={roots.map(n => n.tile)} onChanged={() => { reloadTiles(); setShowRootSort(false) }} />
+            </div>
+          )}
           <div className="tree-container" style={{ boxShadow: 'none' }}>
             {groupedRoots.length === 0 && orphans.length === 0 ? (
               <div className="empty-state" style={{ padding: 24 }}>
