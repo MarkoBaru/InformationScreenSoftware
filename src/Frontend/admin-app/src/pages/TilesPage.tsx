@@ -44,8 +44,9 @@ export default function TilesPage() {
       if (filterParent === '__none__' && t.parentTileId !== null) return false
       if (filterParent === '__has__' && t.parentTileId === null) return false
       if (filterParent && filterParent !== '__none__' && filterParent !== '__has__' && t.parentTileId !== Number(filterParent)) return false
-      if (filterUsage === 'used' && t.assignedScreens.length === 0) return false
-      if (filterUsage === 'unused' && t.assignedScreens.length > 0) return false
+      const isUsed = t.assignedScreens.length > 0 || t.parentTileId !== null
+      if (filterUsage === 'used' && !isUsed) return false
+      if (filterUsage === 'unused' && isUsed) return false
       if (filterFromStart && (!t.activeFrom || t.activeFrom.slice(0, 10) < filterFromStart)) return false
       if (filterFromEnd && (!t.activeFrom || t.activeFrom.slice(0, 10) > filterFromEnd)) return false
       if (filterToStart && (!t.activeTo || t.activeTo.slice(0, 10) < filterToStart)) return false
@@ -140,8 +141,8 @@ export default function TilesPage() {
         </select>
         <select value={filterUsage} onChange={(e) => setFilterUsage(e.target.value)}>
           <option value="">Alle Zuweisungen</option>
-          <option value="used">Zugewiesen ({tiles.filter(t => t.assignedScreens.length > 0).length})</option>
-          <option value="unused">Nicht zugewiesen ({tiles.filter(t => t.assignedScreens.length === 0).length})</option>
+          <option value="used">Eingebunden ({tiles.filter(t => t.assignedScreens.length > 0 || t.parentTileId !== null).length})</option>
+          <option value="unused">Nicht eingebunden ({tiles.filter(t => t.assignedScreens.length === 0 && t.parentTileId === null).length})</option>
         </select>
         <select value={filterParent} onChange={(e) => setFilterParent(e.target.value)}>
           <option value="">Alle Ebenen</option>
