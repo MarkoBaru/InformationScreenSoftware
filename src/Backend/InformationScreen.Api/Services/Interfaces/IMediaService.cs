@@ -9,4 +9,5 @@ public interface IMediaService
     Task<MediaAsset?> GetByIdAsync(int id);
     Task<MediaAssetDto> UploadAsync(IFormFile file);
     Task<bool> DeleteAsync(int id);
+    Task<Stream?> GetFileStreamAsync(int id);
 }

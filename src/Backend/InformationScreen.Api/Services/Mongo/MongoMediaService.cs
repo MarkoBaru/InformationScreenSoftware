@@ -96,6 +96,24 @@ public class MongoMediaService : IMediaService
         );
     }
 
+    public async Task<Stream?> GetFileStreamAsync(int id)
+    {
+        var doc = await MediaAssets.Find(m => m.Id == id).FirstOrDefaultAsync();
+        if (doc == null) return null;
+
+        if (_blobContainer != null && doc.FilePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            var blobName = new Uri(doc.FilePath).Segments.Last();
+            var blobClient = _blobContainer.GetBlobClient(blobName);
+            return await blobClient.OpenReadAsync();
+        }
+
+        if (File.Exists(doc.FilePath))
+            return new FileStream(doc.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        return null;
+    }
+
     public async Task<bool> DeleteAsync(int id)
     {
         var asset = await MediaAssets.Find(m => m.Id == id).FirstOrDefaultAsync();

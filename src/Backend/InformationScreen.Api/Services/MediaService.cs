@@ -64,6 +64,13 @@ public class MediaService : IMediaService
         );
     }
 
+    public async Task<Stream?> GetFileStreamAsync(int id)
+    {
+        var asset = await _db.MediaAssets.FindAsync(id);
+        if (asset == null || !File.Exists(asset.FilePath)) return null;
+        return new FileStream(asset.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+    }
+
     public async Task<bool> DeleteAsync(int id)
     {
         var asset = await _db.MediaAssets.FindAsync(id);
