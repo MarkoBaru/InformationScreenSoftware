@@ -348,7 +348,8 @@ export default function ScreenEditPage() {
                     <input
                       type="checkbox"
                       checked={assignedTileIds.has(t.id)}
-                      onChange={() => toggleTile(t.id)}
+                      onChange={() => {}}
+                      onClick={(e) => e.stopPropagation()}
                       style={{ width: 'auto', flexShrink: 0 }}
                     />
                     <span className="folder-child-row__icon" style={{ fontSize: '0.9rem' }}>

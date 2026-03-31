@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { screensApi, Screen, ScreenList, Tile } from '../api'
+import { screensApi, Screen, ScreenList, Tile, tilesApi, TileList } from '../api'
 import './PageStyles.css'
 
 const CONTENT_ICONS: Record<string, string> = {
@@ -62,17 +62,116 @@ function contentSummary(t: Tile): string | null {
   return t.description || null
 }
 
-function TreeNodeRow({ node, depth, expanded, onToggle }: {
+function FolderChildPicker({ folderId, allTiles, onChanged }: {
+  folderId: number
+  allTiles: TileList[]
+  onChanged: () => void
+}) {
+  const [search, setSearch] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [busy, setBusy] = useState<number | null>(null)
+
+  const childIds = useMemo(() => new Set(allTiles.filter(t => t.parentTileId === folderId).map(t => t.id)), [allTiles, folderId])
+  const contentTypes = useMemo(() => [...new Set(allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder').map(t => t.contentType))].sort(), [allTiles, folderId])
+
+  const filtered = useMemo(() => {
+    let list = allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder')
+    if (search) {
+      const q = search.toLowerCase()
+      list = list.filter(t => t.title.toLowerCase().includes(q))
+    }
+    if (filterType) list = list.filter(t => t.contentType === filterType)
+    // assigned children first
+    list.sort((a, b) => {
+      const aIn = childIds.has(a.id) ? 0 : 1
+      const bIn = childIds.has(b.id) ? 0 : 1
+      if (aIn !== bIn) return aIn - bIn
+      return a.title.localeCompare(b.title)
+    })
+    return list
+  }, [allTiles, folderId, childIds, search, filterType])
+
+  const toggle = async (tile: TileList) => {
+    setBusy(tile.id)
+    try {
+      const isChild = childIds.has(tile.id)
+      await tilesApi.update(tile.id, {
+        title: tile.title, description: tile.description || undefined,
+        imageUrl: tile.imageUrl || undefined, linkUrl: tile.linkUrl || undefined,
+        linkTarget: tile.linkTarget, contentType: tile.contentType,
+        articleBody: tile.articleBody || undefined, sortOrder: tile.sortOrder,
+        isActive: tile.isActive, activeFrom: tile.activeFrom || undefined,
+        activeTo: tile.activeTo || undefined,
+        parentTileId: isChild ? undefined : folderId,
+        categoryId: tile.categoryId || undefined,
+      })
+      onChanged()
+    } catch (err) {
+      alert('Fehler: ' + (err as Error).message)
+    } finally { setBusy(null) }
+  }
+
+  return (
+    <div style={{ margin: '4px 0 8px', border: '1px solid #e0e0e0', borderRadius: 8, background: '#fafafa' }}>
+      <div className="folder-picker-toolbar" style={{ padding: '8px 10px', gap: 6 }}>
+        <input
+          type="text"
+          placeholder="Suche..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="folder-picker-toolbar__search"
+          style={{ fontSize: '0.8rem' }}
+        />
+        <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ fontSize: '0.8rem' }}>
+          <option value="">Alle Typen</option>
+          {contentTypes.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+        </select>
+      </div>
+      <div className="folder-picker-list" style={{ maxHeight: 220, padding: '0 4px 4px' }}>
+        {filtered.map(t => (
+          <div
+            key={t.id}
+            className="folder-child-row"
+            onClick={() => { if (busy === null) toggle(t) }}
+            style={{ cursor: busy === t.id ? 'wait' : 'pointer', padding: '4px 8px', fontSize: '0.82rem' }}
+          >
+            <input
+              type="checkbox"
+              checked={childIds.has(t.id)}
+              onChange={() => {}}
+              onClick={e => e.stopPropagation()}
+              style={{ width: 'auto', flexShrink: 0 }}
+            />
+            <span className="folder-child-row__icon" style={{ fontSize: '0.8rem' }}>
+              {CONTENT_ICONS[t.contentType] || '📎'}
+            </span>
+            <span className="folder-child-row__title" style={{ color: childIds.has(t.id) ? 'var(--primary)' : 'var(--text)', fontSize: '0.82rem' }}>{t.title}</span>
+            <span className="folder-child-row__type" style={{ fontSize: '0.7rem' }}>{t.contentType}</span>
+            {busy === t.id && <span style={{ fontSize: '0.7rem', color: '#888' }}>...</span>}
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div style={{ padding: 12, textAlign: 'center', color: '#999', fontSize: '0.8rem' }}>Keine Inhalte gefunden.</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged }: {
   node: TreeNode
   depth: number
   expanded: Set<number>
   onToggle: (id: number) => void
+  allTiles: TileList[]
+  onTilesChanged: () => void
 }) {
   const t = node.tile
   const hasChildren = node.children.length > 0
   const isExpanded = expanded.has(t.id)
   const icon = CONTENT_ICONS[t.contentType] || '📎'
   const summary = contentSummary(t)
+  const [showPicker, setShowPicker] = useState(false)
 
   return (
     <>
@@ -107,11 +206,28 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
         <span className={`badge ${t.isActive ? 'badge--success' : 'badge--muted'}`} style={{ fontSize: '0.7rem' }}>
           {t.isActive ? 'Aktiv' : 'Inaktiv'}
         </span>
+
+        {t.contentType === 'Folder' && (
+          <button
+            className="btn btn--small"
+            style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
+            onClick={(e) => { e.stopPropagation(); setShowPicker(p => !p) }}
+            title="Inhalte zuweisen"
+          >
+            {showPicker ? '−' : '+'}
+          </button>
+        )}
       </div>
 
       {summary && (
         <div className="tree-node__content" style={{ paddingLeft: depth * 28 + 52 }}>
           {summary}
+        </div>
+      )}
+
+      {showPicker && (
+        <div style={{ paddingLeft: depth * 28 + 52, paddingRight: 12 }}>
+          <FolderChildPicker folderId={t.id} allTiles={allTiles} onChanged={onTilesChanged} />
         </div>
       )}
 
@@ -122,6 +238,8 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
           depth={depth + 1}
           expanded={expanded}
           onToggle={onToggle}
+          allTiles={allTiles}
+          onTilesChanged={onTilesChanged}
         />
       ))}
     </>
@@ -130,18 +248,37 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
 
 function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
   const [screen, setScreen] = useState<Screen | null>(null)
+  const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
-  const toggle = useCallback(() => {
-    if (screen) { setOpen(o => !o); return }
+  const loadData = useCallback(() => {
     setLoading(true)
-    screensApi.get(screenSummary.id).then(s => {
+    Promise.all([
+      screensApi.get(screenSummary.id),
+      tilesApi.list(),
+    ]).then(([s, tiles]) => {
       setScreen(s)
+      setAllTiles(tiles)
       setOpen(true)
     }).finally(() => setLoading(false))
-  }, [screen, screenSummary.id])
+  }, [screenSummary.id])
+
+  const toggle = useCallback(() => {
+    if (screen) { setOpen(o => !o); return }
+    loadData()
+  }, [screen, loadData])
+
+  const reloadTiles = useCallback(() => {
+    Promise.all([
+      screensApi.get(screenSummary.id),
+      tilesApi.list(),
+    ]).then(([s, tiles]) => {
+      setScreen(s)
+      setAllTiles(tiles)
+    })
+  }, [screenSummary.id])
 
   const { roots, orphans } = useMemo(() => {
     if (!screen) return { roots: [], orphans: [] }
@@ -206,7 +343,7 @@ function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
                   <div key={g.name} className="tree-category">
                     <div className="tree-category__header">{g.name}</div>
                     {g.nodes.map(node => (
-                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} />
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} />
                     ))}
                   </div>
                 ))}
@@ -214,7 +351,7 @@ function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
                   <div className="tree-category">
                     <div className="tree-category__header" style={{ color: '#c62828' }}>Verwaiste Inhalte</div>
                     {orphans.map(node => (
-                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} />
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} />
                     ))}
                   </div>
                 )}
