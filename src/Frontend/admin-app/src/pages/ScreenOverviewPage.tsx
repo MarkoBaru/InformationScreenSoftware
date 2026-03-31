@@ -71,13 +71,15 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
 }) {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
   const [busy, setBusy] = useState<number | null>(null)
 
   const screenName = allScreens.find(s => s.id === screenId)?.name || ''
   const childIds = useMemo(() => new Set(
     allTiles.filter(t => t.parentTileId === folderId && t.assignedScreens.includes(screenName)).map(t => t.id)
   ), [allTiles, folderId, screenName])
-  const contentTypes = useMemo(() => [...new Set(allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder').map(t => t.contentType))].sort(), [allTiles, folderId])
+  const categories = useMemo(() => [...new Set(allTiles.filter(t => t.categoryName).map(t => t.categoryName!))].sort(), [allTiles])
 
   const filtered = useMemo(() => {
     let list = allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder')
@@ -86,6 +88,12 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
       list = list.filter(t => t.title.toLowerCase().includes(q))
     }
     if (filterType) list = list.filter(t => t.contentType === filterType)
+    if (filterCategory) {
+      if (filterCategory === '__none__') list = list.filter(t => t.categoryId === null)
+      else list = list.filter(t => t.categoryName === filterCategory)
+    }
+    if (filterStatus === 'active') list = list.filter(t => t.isActive)
+    if (filterStatus === 'inactive') list = list.filter(t => !t.isActive)
     // assigned children first
     list.sort((a, b) => {
       const aIn = childIds.has(a.id) ? 0 : 1
@@ -94,7 +102,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
       return a.title.localeCompare(b.title)
     })
     return list
-  }, [allTiles, folderId, childIds, search, filterType])
+  }, [allTiles, folderId, childIds, search, filterType, filterCategory, filterStatus])
 
   const toggle = async (tile: TileList) => {
     setBusy(tile.id)
@@ -142,9 +150,25 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
           className="folder-picker-toolbar__search"
           style={{ fontSize: '0.8rem' }}
         />
+        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ fontSize: '0.8rem' }}>
+          <option value="">Alle Kategorien</option>
+          <option value="__none__">Ohne Kategorie</option>
+          {categories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ fontSize: '0.8rem' }}>
           <option value="">Alle Typen</option>
-          {contentTypes.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+          <option value="Link">Link</option>
+          <option value="FullscreenImage">Fullscreen-Bild</option>
+          <option value="Video">Video</option>
+          <option value="Pdf">PDF</option>
+          <option value="Article">Beitrag</option>
+          <option value="Schichtplan">Schichtplan</option>
+          <option value="Stream">Stream</option>
+        </select>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ fontSize: '0.8rem' }}>
+          <option value="">Alle Status</option>
+          <option value="active">Aktiv</option>
+          <option value="inactive">Inaktiv</option>
         </select>
       </div>
       <div className="folder-picker-list" style={{ maxHeight: 220, padding: '0 4px 4px' }}>
