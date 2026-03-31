@@ -28,7 +28,7 @@ export default function TileEditPage() {
   const [allScreens, setAllScreens] = useState<ScreenList[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([])
-  const [showMediaPicker, setShowMediaPicker] = useState<'button' | 'article' | null>(null)
+  const [showMediaPicker, setShowMediaPicker] = useState<'button' | 'article' | 'image' | 'video' | 'pdf' | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
@@ -88,23 +88,6 @@ export default function TileEditPage() {
     })
   }
 
-  const handleFileUpload = async (file: File) => {
-    const maxSize = 1024 * 1024 * 1024 // 1 GB
-    if (file.size > maxSize) {
-      alert(`Die Datei "${file.name}" ist zu gross (${(file.size / 1024 / 1024).toFixed(0)} MB).\nMaximal erlaubt: 1 GB.`)
-      return
-    }
-    setUploading(true)
-    try {
-      const asset = await mediaApi.upload(file)
-      setLinkUrl(asset.url)
-    } catch (err) {
-      alert('Upload fehlgeschlagen: ' + (err as Error).message)
-    } finally {
-      setUploading(false)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -141,7 +124,7 @@ export default function TileEditPage() {
     }
   }
 
-  const openMediaPicker = (purpose: 'button' | 'article') => {
+  const openMediaPicker = (purpose: 'button' | 'article' | 'image' | 'video' | 'pdf') => {
     mediaApi.list().then(setMediaAssets)
     setShowMediaPicker(purpose)
   }
@@ -160,6 +143,8 @@ export default function TileEditPage() {
         setImageUrl(asset.url)
       } else if (showMediaPicker === 'article') {
         setArticleBody(prev => prev + `<img src="${asset.url}" alt="${asset.fileName}" style="max-width:100%" />`)
+      } else if (showMediaPicker === 'image' || showMediaPicker === 'video' || showMediaPicker === 'pdf') {
+        setLinkUrl(asset.url)
       }
       setShowMediaPicker(null)
     } catch (err) {
@@ -171,20 +156,27 @@ export default function TileEditPage() {
 
   const renderMediaPicker = () => {
     if (!showMediaPicker) return null
-    const isImagePicker = showMediaPicker === 'button' || showMediaPicker === 'article'
-    const filtered = mediaAssets.filter(m => isImagePicker ? m.mimeType.startsWith('image/') : true)
-    const pickerTitle = showMediaPicker === 'button' ? 'Button-Bild wählen' : 'Beitragsbild wählen'
+    const pickerConfig: Record<string, { filter: (m: MediaAsset) => boolean; title: string; accept: string; uploadLabel: string; emptyText: string }> = {
+      button:  { filter: m => m.mimeType.startsWith('image/'), title: 'Button-Bild wählen', accept: 'image/*', uploadLabel: 'Bild hochladen', emptyText: 'Keine Bilder vorhanden' },
+      article: { filter: m => m.mimeType.startsWith('image/'), title: 'Beitragsbild wählen', accept: 'image/*', uploadLabel: 'Bild hochladen', emptyText: 'Keine Bilder vorhanden' },
+      image:   { filter: m => m.mimeType.startsWith('image/'), title: 'Bild wählen', accept: 'image/*', uploadLabel: 'Bild hochladen', emptyText: 'Keine Bilder vorhanden' },
+      video:   { filter: m => m.mimeType.startsWith('video/'), title: 'Video wählen', accept: 'video/*', uploadLabel: 'Video hochladen', emptyText: 'Keine Videos vorhanden' },
+      pdf:     { filter: m => m.mimeType === 'application/pdf', title: 'PDF wählen', accept: 'application/pdf', uploadLabel: 'PDF hochladen', emptyText: 'Keine PDFs vorhanden' },
+    }
+    const cfg = pickerConfig[showMediaPicker]
+    const filtered = mediaAssets.filter(cfg.filter)
+    const selectedUrl = showMediaPicker === 'button' ? imageUrl : linkUrl
 
     return (
       <div className="media-picker-overlay" onClick={() => setShowMediaPicker(null)}>
         <div className="media-picker" onClick={(e) => e.stopPropagation()}>
           <div className="media-picker__header">
-            <h3>{pickerTitle}</h3>
+            <h3>{cfg.title}</h3>
             <div style={{ display: 'flex', gap: 8 }}>
               <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
-                {uploading ? 'Wird hochgeladen...' : 'Bild hochladen'}
+                {uploading ? 'Wird hochgeladen...' : cfg.uploadLabel}
                 <input
-                  type="file" accept="image/*" style={{ display: 'none' }}
+                  type="file" accept={cfg.accept} style={{ display: 'none' }}
                   disabled={uploading}
                   onChange={(e) => { if (e.target.files?.[0]) handleMediaPickerUpload(e.target.files[0]) }}
                 />
@@ -198,22 +190,26 @@ export default function TileEditPage() {
               <button
                 key={m.id}
                 type="button"
-                className={`media-picker__item ${imageUrl === m.url ? 'media-picker__item--selected' : ''}`}
+                className={`media-picker__item ${selectedUrl === m.url ? 'media-picker__item--selected' : ''}`}
                 onClick={() => {
                   if (showMediaPicker === 'button') setImageUrl(m.url)
                   else if (showMediaPicker === 'article') {
                     setArticleBody(prev => prev + `<img src="${m.url}" alt="${m.fileName}" style="max-width:100%" />`)
+                  } else {
+                    setLinkUrl(m.url)
                   }
                   setShowMediaPicker(null)
                 }}
               >
-                <img src={m.url} alt={m.fileName} />
+                {m.mimeType.startsWith('image/') && <img src={m.url} alt={m.fileName} />}
+                {m.mimeType.startsWith('video/') && <video src={m.url} style={{ width: '100%', height: 80, objectFit: 'cover' }} />}
+                {m.mimeType === 'application/pdf' && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 80, background: 'var(--bg-secondary, #f5f5f5)', borderRadius: 4, fontSize: 24 }}>PDF</div>}
                 <span>{m.fileName}</span>
               </button>
             ))}
             {filtered.length === 0 && (
               <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: 'var(--text-light)', padding: 24 }}>
-                Keine Medien vorhanden – laden Sie ein Bild über den Button oben hoch.
+                {cfg.emptyText} – laden Sie eine Datei über den Button oben hoch.
               </p>
             )}
           </div>
@@ -299,15 +295,10 @@ export default function TileEditPage() {
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Bild-URL oder hochladen" style={{ flex: 1 }} />
-              <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
-                {uploading ? 'Wird hochgeladen...' : 'Bild hochladen'}
-                <input
-                  type="file" accept="image/*" style={{ display: 'none' }}
-                  disabled={uploading}
-                  onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}
-                />
-              </label>
+              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Bild-URL oder aus Medien wählen" style={{ flex: 1 }} />
+              <button type="button" className="btn btn--small btn--primary" onClick={() => openMediaPicker('image')}>
+                Aus Medien wählen
+              </button>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Dieses Bild wird im Kiosk-Modus als Vollbild angezeigt.</p>
           </div>
@@ -341,15 +332,10 @@ export default function TileEditPage() {
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Video-URL oder hochladen" style={{ flex: 1 }} />
-              <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
-                {uploading ? 'Wird hochgeladen...' : 'Video hochladen'}
-                <input
-                  type="file" accept="video/*" style={{ display: 'none' }}
-                  disabled={uploading}
-                  onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}
-                />
-              </label>
+              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Video-URL oder aus Medien wählen" style={{ flex: 1 }} />
+              <button type="button" className="btn btn--small btn--primary" onClick={() => openMediaPicker('video')}>
+                Aus Medien wählen
+              </button>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Max. 1 GB · Formate: MP4, WebM, OGG</p>
           </div>
@@ -360,15 +346,10 @@ export default function TileEditPage() {
           <div className="form-group">
             <label>PDF</label>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="PDF-URL oder hochladen" style={{ flex: 1 }} />
-              <label className="btn btn--small btn--primary" style={{ cursor: 'pointer', margin: 0 }}>
-                {uploading ? 'Wird hochgeladen...' : 'PDF hochladen'}
-                <input
-                  type="file" accept="application/pdf" style={{ display: 'none' }}
-                  disabled={uploading}
-                  onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]) }}
-                />
-              </label>
+              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="PDF-URL oder aus Medien wählen" style={{ flex: 1 }} />
+              <button type="button" className="btn btn--small btn--primary" onClick={() => openMediaPicker('pdf')}>
+                Aus Medien wählen
+              </button>
             </div>
             <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Max. 1 GB · Format: PDF</p>
             {linkUrl && (
