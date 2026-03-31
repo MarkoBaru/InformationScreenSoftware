@@ -19,8 +19,13 @@ public class AuthService
     public AuthService(AppDbContext db, IConfiguration config)
     {
         _db = db;
-        _jwtKey = config["Jwt:Key"] ?? "InfoScreen-Default-SuperSecret-Key-Min32Chars!!";
-        _jwtIssuer = config["Jwt:Issuer"] ?? "InformationScreen";
+        // Env-Variable hat Vorrang (Azure Container Apps / Key Vault)
+        var envKey = Environment.GetEnvironmentVariable("JWT_KEY");
+        _jwtKey = !string.IsNullOrEmpty(envKey) ? envKey
+            : config["Jwt:Key"] ?? "InfoScreen-Default-SuperSecret-Key-Min32Chars!!";
+        var envIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+        _jwtIssuer = !string.IsNullOrEmpty(envIssuer) ? envIssuer
+            : config["Jwt:Issuer"] ?? "InformationScreen";
     }
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
