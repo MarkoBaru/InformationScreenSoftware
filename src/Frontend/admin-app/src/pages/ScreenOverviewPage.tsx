@@ -62,16 +62,21 @@ function contentSummary(t: Tile): string | null {
   return t.description || null
 }
 
-function FolderChildPicker({ folderId, allTiles, onChanged }: {
+function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens }: {
   folderId: number
   allTiles: TileList[]
   onChanged: () => void
+  screenId: number
+  allScreens: ScreenList[]
 }) {
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
   const [busy, setBusy] = useState<number | null>(null)
 
-  const childIds = useMemo(() => new Set(allTiles.filter(t => t.parentTileId === folderId).map(t => t.id)), [allTiles, folderId])
+  const screenName = allScreens.find(s => s.id === screenId)?.name || ''
+  const childIds = useMemo(() => new Set(
+    allTiles.filter(t => t.parentTileId === folderId && t.assignedScreens.includes(screenName)).map(t => t.id)
+  ), [allTiles, folderId, screenName])
   const contentTypes = useMemo(() => [...new Set(allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder').map(t => t.contentType))].sort(), [allTiles, folderId])
 
   const filtered = useMemo(() => {
@@ -95,6 +100,20 @@ function FolderChildPicker({ folderId, allTiles, onChanged }: {
     setBusy(tile.id)
     try {
       const isChild = childIds.has(tile.id)
+      // Compute current screenIds from assignedScreens names
+      const currentScreenIds = allScreens
+        .filter(s => tile.assignedScreens.includes(s.name))
+        .map(s => s.id)
+      let newScreenIds: number[]
+      if (isChild) {
+        // Remove from this screen
+        newScreenIds = currentScreenIds.filter(id => id !== screenId)
+      } else {
+        // Add to this screen
+        newScreenIds = currentScreenIds.includes(screenId)
+          ? currentScreenIds
+          : [...currentScreenIds, screenId]
+      }
       await tilesApi.update(tile.id, {
         title: tile.title, description: tile.description || undefined,
         imageUrl: tile.imageUrl || undefined, linkUrl: tile.linkUrl || undefined,
@@ -104,6 +123,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged }: {
         activeTo: tile.activeTo || undefined,
         parentTileId: isChild ? undefined : folderId,
         categoryId: tile.categoryId || undefined,
+        screenIds: newScreenIds,
       })
       onChanged()
     } catch (err) {
@@ -158,13 +178,15 @@ function FolderChildPicker({ folderId, allTiles, onChanged }: {
   )
 }
 
-function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged }: {
+function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged, screenId, allScreens }: {
   node: TreeNode
   depth: number
   expanded: Set<number>
   onToggle: (id: number) => void
   allTiles: TileList[]
   onTilesChanged: () => void
+  screenId: number
+  allScreens: ScreenList[]
 }) {
   const t = node.tile
   const hasChildren = node.children.length > 0
@@ -227,7 +249,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
 
       {showPicker && (
         <div style={{ paddingLeft: depth * 28 + 52, paddingRight: 12 }}>
-          <FolderChildPicker folderId={t.id} allTiles={allTiles} onChanged={onTilesChanged} />
+          <FolderChildPicker folderId={t.id} allTiles={allTiles} onChanged={onTilesChanged} screenId={screenId} allScreens={allScreens} />
         </div>
       )}
 
@@ -240,13 +262,15 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
           onToggle={onToggle}
           allTiles={allTiles}
           onTilesChanged={onTilesChanged}
+          screenId={screenId}
+          allScreens={allScreens}
         />
       ))}
     </>
   )
 }
 
-function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
+function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenList; allScreens: ScreenList[] }) {
   const [screen, setScreen] = useState<Screen | null>(null)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [loading, setLoading] = useState(false)
@@ -343,7 +367,7 @@ function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
                   <div key={g.name} className="tree-category">
                     <div className="tree-category__header">{g.name}</div>
                     {g.nodes.map(node => (
-                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} />
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} screenId={screenSummary.id} allScreens={allScreens} />
                     ))}
                   </div>
                 ))}
@@ -351,7 +375,7 @@ function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
                   <div className="tree-category">
                     <div className="tree-category__header" style={{ color: '#c62828' }}>Verwaiste Inhalte</div>
                     {orphans.map(node => (
-                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} />
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} allTiles={allTiles} onTilesChanged={reloadTiles} screenId={screenSummary.id} allScreens={allScreens} />
                     ))}
                   </div>
                 )}
@@ -406,7 +430,7 @@ export default function ScreenOverviewPage() {
       ) : (
         <div className="overview-screens-list">
           {screens.map(s => (
-            <ScreenSection key={s.id} screenSummary={s} />
+            <ScreenSection key={s.id} screenSummary={s} allScreens={screens} />
           ))}
         </div>
       )}
