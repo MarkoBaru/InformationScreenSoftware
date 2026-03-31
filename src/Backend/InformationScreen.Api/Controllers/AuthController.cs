@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
-using InformationScreen.Api.Services;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
@@ -9,9 +9,9 @@ namespace InformationScreen.Api.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
     }
@@ -42,9 +42,9 @@ public class AuthController : ControllerBase
 [Authorize(Roles = "Admin")]
 public class UsersController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public UsersController(AuthService authService)
+    public UsersController(IAuthService authService)
     {
         _authService = authService;
     }

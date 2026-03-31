@@ -101,6 +101,12 @@ public class MongoContext
         var media = _database.GetCollection<MongoMediaAsset>("mediaAssets");
         media.Indexes.CreateOne(new CreateIndexModel<MongoMediaAsset>(
             Builders<MongoMediaAsset>.IndexKeys.Descending(m => m.UploadedAt)));
+
+        // Unique username index on users
+        var users = _database.GetCollection<MongoUser>("users");
+        users.Indexes.CreateOne(new CreateIndexModel<MongoUser>(
+            Builders<MongoUser>.IndexKeys.Ascending(u => u.Username),
+            new CreateIndexOptions { Unique = true }));
     }
 }
 
@@ -169,4 +175,24 @@ public class MongoMediaAsset
     public string MimeType { get; set; } = string.Empty;
     public long FileSizeBytes { get; set; }
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class MongoUser
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
+    public int Id { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Role { get; set; } = "User";
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class MongoSetting
+{
+    [BsonId]
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }

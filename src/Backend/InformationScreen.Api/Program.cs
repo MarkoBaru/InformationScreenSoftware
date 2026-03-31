@@ -45,6 +45,8 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddScoped<ITileService, MongoTileService>();
     builder.Services.AddScoped<IMediaService, MongoMediaService>();
     builder.Services.AddScoped<ICategoryService, MongoCategoryService>();
+    builder.Services.AddScoped<IAuthService, MongoAuthService>();
+    builder.Services.AddScoped<ISettingsService, MongoSettingsService>();
 }
 else
 {
@@ -55,17 +57,9 @@ else
     builder.Services.AddScoped<ITileService, TileService>();
     builder.Services.AddScoped<IMediaService, MediaService>();
     builder.Services.AddScoped<ICategoryService, CategoryService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<ISettingsService, SettingsService>();
 }
-
-// Auth Service (needs DbContext for both modes – SQLite always registered for AuthService)
-if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
-{
-    // For MongoDB mode, we still need SQLite for auth (user management)
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
-            ?? "Data Source=informationscreen.db"));
-}
-builder.Services.AddScoped<AuthService>();
 
 // JWT Authentication
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
@@ -137,7 +131,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto-migrate SQLite on startup (always needed – auth uses SQLite in both modes)
+// Auto-migrate SQLite on startup (only in SQLite mode)
+if (databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -147,7 +142,7 @@ var app = builder.Build();
 // Ensure default admin user exists
 {
     using var scope = app.Services.CreateScope();
-    var authService = scope.ServiceProvider.GetRequiredService<AuthService>();
+    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
     await authService.EnsureDefaultAdminAsync();
 }
 

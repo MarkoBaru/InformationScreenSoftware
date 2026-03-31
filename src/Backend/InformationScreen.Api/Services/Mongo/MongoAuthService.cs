@@ -2,25 +2,23 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using InformationScreen.Api.Data;
+using MongoDB.Driver;
 using InformationScreen.Api.DTOs;
 using InformationScreen.Api.Models;
 using InformationScreen.Api.Services.Interfaces;
 
-namespace InformationScreen.Api.Services;
+namespace InformationScreen.Api.Services.Mongo;
 
-public class AuthService : IAuthService
+public class MongoAuthService : IAuthService
 {
-    private readonly AppDbContext _db;
+    private readonly MongoContext _ctx;
     private readonly string _jwtKey;
     private readonly string _jwtIssuer;
 
-    public AuthService(AppDbContext db, IConfiguration config)
+    public MongoAuthService(MongoContext ctx, IConfiguration config)
     {
-        _db = db;
-        // Env-Variable hat Vorrang (Azure Container Apps / Key Vault)
+        _ctx = ctx;
         var envKey = Environment.GetEnvironmentVariable("JWT_KEY");
         _jwtKey = !string.IsNullOrEmpty(envKey) ? envKey
             : config["Jwt:Key"] ?? "InfoScreen-Default-SuperSecret-Key-Min32Chars!!";
@@ -29,10 +27,12 @@ public class AuthService : IAuthService
             : config["Jwt:Issuer"] ?? "InformationScreen";
     }
 
+    private IMongoCollection<MongoUser> Users => _ctx.GetCollection<MongoUser>("users");
+
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(
-            u => u.Username == request.Username && u.IsActive);
+        var user = await Users.Find(u => u.Username == request.Username && u.IsActive)
+            .FirstOrDefaultAsync();
         if (user == null) return null;
 
         if (!VerifyPassword(request.Password, user.PasswordHash))
@@ -44,84 +44,82 @@ public class AuthService : IAuthService
 
     public async Task<List<UserDto>> GetAllUsersAsync()
     {
-        return await _db.Users
-            .OrderBy(u => u.Username)
-            .Select(u => new UserDto(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, u.CreatedAt))
-            .ToListAsync();
+        var users = await Users.Find(_ => true).SortBy(u => u.Username).ToListAsync();
+        return users.Select(MapToDto).ToList();
     }
 
     public async Task<UserDto?> GetUserByIdAsync(int id)
     {
-        var user = await _db.Users.FindAsync(id);
+        var user = await Users.Find(u => u.Id == id).FirstOrDefaultAsync();
         return user == null ? null : MapToDto(user);
     }
 
     public async Task<UserDto?> CreateUserAsync(CreateUserRequest request)
     {
-        if (await _db.Users.AnyAsync(u => u.Username == request.Username))
-            return null;
+        var exists = await Users.Find(u => u.Username == request.Username).AnyAsync();
+        if (exists) return null;
 
-        var user = new AppUser
+        var user = new MongoUser
         {
+            Id = await _ctx.GetNextIdAsync("users"),
             Username = request.Username,
             PasswordHash = HashPassword(request.Password),
             DisplayName = request.DisplayName,
-            Role = request.Role
+            Role = request.Role.ToString()
         };
 
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync();
+        await Users.InsertOneAsync(user);
         return MapToDto(user);
     }
 
     public async Task<UserDto?> UpdateUserAsync(int id, UpdateUserRequest request)
     {
-        var user = await _db.Users.FindAsync(id);
-        if (user == null) return null;
-
-        user.DisplayName = request.DisplayName;
-        user.Role = request.Role;
-        user.IsActive = request.IsActive;
+        var updateDef = Builders<MongoUser>.Update
+            .Set(u => u.DisplayName, request.DisplayName)
+            .Set(u => u.Role, request.Role.ToString())
+            .Set(u => u.IsActive, request.IsActive);
 
         if (!string.IsNullOrEmpty(request.Password))
-            user.PasswordHash = HashPassword(request.Password);
+            updateDef = updateDef.Set(u => u.PasswordHash, HashPassword(request.Password));
 
-        await _db.SaveChangesAsync();
-        return MapToDto(user);
+        var result = await Users.UpdateOneAsync(u => u.Id == id, updateDef);
+        if (result.MatchedCount == 0) return null;
+
+        return await GetUserByIdAsync(id);
     }
 
     public async Task<bool> DeleteUserAsync(int id)
     {
-        var user = await _db.Users.FindAsync(id);
-        if (user == null) return false;
-
-        _db.Users.Remove(user);
-        await _db.SaveChangesAsync();
-        return true;
+        var result = await Users.DeleteOneAsync(u => u.Id == id);
+        return result.DeletedCount > 0;
     }
 
     public async Task EnsureDefaultAdminAsync()
     {
-        if (!await _db.Users.AnyAsync())
+        var any = await Users.Find(_ => true).AnyAsync();
+        if (!any)
         {
-            _db.Users.Add(new AppUser
+            Console.WriteLine("[MongoAuthService] Creating default admin user...");
+            var user = new MongoUser
             {
+                Id = await _ctx.GetNextIdAsync("users"),
                 Username = "admin",
                 PasswordHash = HashPassword("admin"),
                 DisplayName = "Administrator",
-                Role = UserRole.Admin
-            });
-            await _db.SaveChangesAsync();
+                Role = UserRole.Admin.ToString()
+            };
+            await Users.InsertOneAsync(user);
+            Console.WriteLine("[MongoAuthService] Default admin created (Id={0})", user.Id);
         }
     }
 
-    private string GenerateToken(AppUser user)
+    private string GenerateToken(MongoUser user)
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
+            new Claim(ClaimTypes.Role, user.Role)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
@@ -157,6 +155,7 @@ public class AuthService : IAuthService
         return CryptographicOperations.FixedTimeEquals(hash, computedHash);
     }
 
-    private static UserDto MapToDto(AppUser user) =>
-        new(user.Id, user.Username, user.DisplayName, user.Role, user.IsActive, user.CreatedAt);
+    private static UserDto MapToDto(MongoUser user) =>
+        new(user.Id, user.Username, user.DisplayName,
+            Enum.Parse<UserRole>(user.Role), user.IsActive, user.CreatedAt);
 }
