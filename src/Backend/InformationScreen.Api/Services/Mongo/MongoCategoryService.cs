@@ -18,7 +18,7 @@ public class MongoCategoryService : ICategoryService
 
     public async Task<List<CategoryDto>> GetAllAsync()
     {
-        var categories = await Categories.Find(_ => true).SortBy(c => c.Name).ToListAsync();
+        var categories = await Categories.Find(_ => true).ToListAsync();
 
         // Count tiles per category
         var tiles = await Tiles.Find(_ => true).ToListAsync();
@@ -26,7 +26,7 @@ public class MongoCategoryService : ICategoryService
             .GroupBy(t => t.CategoryId!.Value)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        return categories.Select(c => new CategoryDto(
+        return categories.OrderBy(c => c.Name).Select(c => new CategoryDto(
             c.Id, c.Name, c.IconUrl,
             tileCounts.GetValueOrDefault(c.Id, 0)
         )).ToList();

@@ -20,7 +20,7 @@ public class MongoTileService : ITileService
 
     public async Task<List<TileListDto>> GetAllAsync()
     {
-        var tiles = await Tiles.Find(_ => true).SortBy(t => t.SortOrder).ToListAsync();
+        var tiles = await Tiles.Find(_ => true).ToListAsync();
         return await MapToListDtos(tiles);
     }
 

@@ -32,10 +32,9 @@ public class MongoMediaService : IMediaService
     public async Task<List<MediaAssetDto>> GetAllAsync()
     {
         var assets = await MediaAssets.Find(_ => true)
-            .SortByDescending(m => m.UploadedAt)
             .ToListAsync();
 
-        return assets.Select(m => new MediaAssetDto(
+        return assets.OrderByDescending(m => m.UploadedAt).Select(m => new MediaAssetDto(
             m.Id, m.FileName, $"/api/media/{m.Id}",
             m.MimeType, m.FileSizeBytes, m.UploadedAt
         )).ToList();

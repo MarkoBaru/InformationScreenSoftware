@@ -44,8 +44,8 @@ public class MongoAuthService : IAuthService
 
     public async Task<List<UserDto>> GetAllUsersAsync()
     {
-        var users = await Users.Find(_ => true).SortBy(u => u.Username).ToListAsync();
-        return users.Select(MapToDto).ToList();
+        var users = await Users.Find(_ => true).ToListAsync();
+        return users.OrderBy(u => u.Username).Select(MapToDto).ToList();
     }
 
     public async Task<UserDto?> GetUserByIdAsync(int id)

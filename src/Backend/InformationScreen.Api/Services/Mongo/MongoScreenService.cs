@@ -27,8 +27,8 @@ public class MongoScreenService : IScreenService
 
     public async Task<List<ScreenListDto>> GetAllAsync()
     {
-        var screens = await Screens.Find(_ => true).SortBy(s => s.Name).ToListAsync();
-        return screens.Select(s => new ScreenListDto(
+        var screens = await Screens.Find(_ => true).ToListAsync();
+        return screens.OrderBy(s => s.Name).Select(s => new ScreenListDto(
             s.Id, s.Name, s.Slug,
             Enum.Parse<DefaultContentType>(s.DefaultContentType),
             s.IdleTimeoutSeconds, s.IsActive, s.Tiles?.Count ?? 0
