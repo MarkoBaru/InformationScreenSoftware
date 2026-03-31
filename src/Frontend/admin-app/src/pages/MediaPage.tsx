@@ -1,16 +1,40 @@
-import { useState, useEffect, useRef } from 'react'
-import { mediaApi, MediaAsset } from '../api'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { mediaApi, MediaAsset, tilesApi, TileList } from '../api'
 import './PageStyles.css'
 import './MediaPage.css'
 
 export default function MediaPage() {
   const [media, setMedia] = useState<MediaAsset[]>([])
+  const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [uploading, setUploading] = useState(false)
+  const [filterUsage, setFilterUsage] = useState<'' | 'used' | 'unused'>('')
+  const [searchName, setSearchName] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     mediaApi.list().then(setMedia).catch(() => {})
+    tilesApi.list().then(setAllTiles).catch(() => {})
   }, [])
+
+  const usedUrls = useMemo(() => {
+    const urls = new Set<string>()
+    for (const t of allTiles) {
+      if (t.imageUrl) urls.add(t.imageUrl)
+      if (t.linkUrl) urls.add(t.linkUrl)
+    }
+    return urls
+  }, [allTiles])
+
+  const filteredMedia = useMemo(() => {
+    let list = media
+    if (searchName) {
+      const q = searchName.toLowerCase()
+      list = list.filter(m => m.fileName.toLowerCase().includes(q))
+    }
+    if (filterUsage === 'used') list = list.filter(m => usedUrls.has(m.url))
+    if (filterUsage === 'unused') list = list.filter(m => !usedUrls.has(m.url))
+    return list
+  }, [media, searchName, filterUsage, usedUrls])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -76,8 +100,26 @@ export default function MediaPage() {
           <p>Noch keine Medien hochgeladen.</p>
         </div>
       ) : (
-        <div className="media-grid">
-          {media.map((m) => (
+        <>
+          <div className="filter-bar" style={{ marginBottom: 16 }}>
+            <input
+              className="filter-bar__search"
+              type="text"
+              placeholder="Dateiname suchen..."
+              value={searchName}
+              onChange={e => setSearchName(e.target.value)}
+            />
+            <select value={filterUsage} onChange={e => setFilterUsage(e.target.value as '' | 'used' | 'unused')}>
+              <option value="">Alle ({media.length})</option>
+              <option value="used">Verwendet ({media.filter(m => usedUrls.has(m.url)).length})</option>
+              <option value="unused">Unverwendet ({media.filter(m => !usedUrls.has(m.url)).length})</option>
+            </select>
+          </div>
+          {filteredMedia.length === 0 ? (
+            <div className="empty-state"><p>Keine Medien für diesen Filter.</p></div>
+          ) : (
+          <div className="media-grid">
+            {filteredMedia.map((m) => (
             <div key={m.id} className="media-card">
               {m.mimeType.startsWith('image/') ? (
                 <img src={m.url} alt={m.fileName} className="media-card__preview" />
@@ -86,7 +128,13 @@ export default function MediaPage() {
               )}
               <div className="media-card__info">
                 <p className="media-card__name" title={m.fileName}>{m.fileName}</p>
-                <p className="media-card__meta">{formatSize(m.fileSizeBytes)}</p>
+                <p className="media-card__meta">
+                  {formatSize(m.fileSizeBytes)}
+                  {' · '}
+                  <span style={{ color: usedUrls.has(m.url) ? '#2e7d32' : '#c62828', fontWeight: 600 }}>
+                    {usedUrls.has(m.url) ? 'Verwendet' : 'Unverwendet'}
+                  </span>
+                </p>
                 <p className="media-card__url">
                   <code>{m.url}</code>
                 </p>
@@ -98,8 +146,10 @@ export default function MediaPage() {
                 </button>
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          )}
+        </>
       )}
     </div>
   )

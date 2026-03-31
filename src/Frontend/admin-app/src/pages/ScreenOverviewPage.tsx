@@ -159,8 +159,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
               type="checkbox"
               checked={childIds.has(t.id)}
               onChange={() => {}}
-              onClick={e => e.stopPropagation()}
-              style={{ width: 'auto', flexShrink: 0 }}
+              style={{ width: 'auto', flexShrink: 0, pointerEvents: 'none' }}
             />
             <span className="folder-child-row__icon" style={{ fontSize: '0.8rem' }}>
               {CONTENT_ICONS[t.contentType] || '📎'}
