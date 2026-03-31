@@ -85,8 +85,20 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
   ), [allTiles, folderId, isRoot, screenName])
   const categories = useMemo(() => [...new Set(allTiles.filter(t => t.categoryName).map(t => t.categoryName!))].sort(), [allTiles])
 
+  // Compute ancestors of current folder to prevent circular nesting
+  const ancestorIds = useMemo(() => {
+    const ids = new Set<number>()
+    if (folderId === null) return ids
+    let cur = allTiles.find(t => t.id === folderId)
+    while (cur?.parentTileId) {
+      ids.add(cur.parentTileId)
+      cur = allTiles.find(t => t.id === cur!.parentTileId)
+    }
+    return ids
+  }, [allTiles, folderId])
+
   const filtered = useMemo(() => {
-    let list = allTiles.filter(t => t.id !== folderId && (isRoot || t.contentType !== 'Folder'))
+    let list = allTiles.filter(t => t.id !== folderId && !ancestorIds.has(t.id))
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(t => t.title.toLowerCase().includes(q))
@@ -161,6 +173,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
         </select>
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ fontSize: '0.8rem' }}>
           <option value="">Alle Typen</option>
+          <option value="Folder">Ordner</option>
           <option value="Link">Link</option>
           <option value="FullscreenImage">Fullscreen-Bild</option>
           <option value="Video">Video</option>
