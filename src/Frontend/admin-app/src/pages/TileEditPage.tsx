@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { tilesApi, screensApi, categoriesApi, mediaApi, ScreenList, Category, MediaAsset, TileList } from '../api'
+import { tilesApi, categoriesApi, mediaApi, Category, MediaAsset, TileList } from '../api'
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
@@ -207,8 +207,6 @@ export default function TileEditPage() {
   const [activeTo, setActiveTo] = useState('')
   const [parentTileId, setParentTileId] = useState<number | ''>('')
   const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [screenIds, setScreenIds] = useState<Set<number>>(new Set())
-  const [allScreens, setAllScreens] = useState<ScreenList[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([])
   const [showMediaPicker, setShowMediaPicker] = useState<'button' | 'article' | 'image' | 'video' | 'pdf' | null>(null)
@@ -226,7 +224,6 @@ export default function TileEditPage() {
   const [splitUrls, setSplitUrls] = useState<string[]>(['', '', '', ''])
 
   useEffect(() => {
-    screensApi.list().then(setAllScreens).catch(() => {})
     categoriesApi.list().then(setAllCategories).catch(() => {})
     tilesApi.list().then(setAllTiles).catch(() => {})
 
@@ -265,26 +262,9 @@ export default function TileEditPage() {
         setActiveTo(t.activeTo ? t.activeTo.substring(0, 16) : '')
         setParentTileId(t.parentTileId ?? '')
         setCategoryId(t.categoryId ?? '')
-        screensApi.list().then((screens) => {
-          const ids = new Set(
-            t.assignedScreens
-              .map((name) => screens.find((s) => s.name === name)?.id)
-              .filter((id): id is number => id !== undefined)
-          )
-          setScreenIds(ids)
-        })
       }).catch(() => navigate('/tiles'))
     }
   }, [id, isNew, navigate])
-
-  const toggleScreen = (screenId: number) => {
-    setScreenIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(screenId)) next.delete(screenId)
-      else next.add(screenId)
-      return next
-    })
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -315,7 +295,6 @@ export default function TileEditPage() {
         activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
         activeTo: activeTo ? new Date(activeTo).toISOString() : undefined,
         parentTileId: parentTileId === '' ? undefined : parentTileId,
-        screenIds: Array.from(screenIds),
       }
 
       if (isNew) {
@@ -740,26 +719,6 @@ export default function TileEditPage() {
           <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
             Diesem Inhalt einem Ordner zuweisen, um ihn als Unterinhalt anzuzeigen.
           </p>
-        </div>
-
-        <div className="form-group">
-          <label>Screens zuweisen</label>
-          {allScreens.length === 0 ? (
-            <p className="hint">Noch keine Screens vorhanden.</p>
-          ) : (
-            <div className="checkbox-group">
-              {allScreens.map((s) => (
-                <label key={s.id}>
-                  <input
-                    type="checkbox"
-                    checked={screenIds.has(s.id)}
-                    onChange={() => toggleScreen(s.id)}
-                  />
-                  {s.name}
-                </label>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="form-actions">
