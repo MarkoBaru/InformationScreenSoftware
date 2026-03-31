@@ -16,6 +16,11 @@ export default function TilesPage() {
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterParent, setFilterParent] = useState('')
+  const [filterUsage, setFilterUsage] = useState('')
+  const [filterFromStart, setFilterFromStart] = useState('')
+  const [filterFromEnd, setFilterFromEnd] = useState('')
+  const [filterToStart, setFilterToStart] = useState('')
+  const [filterToEnd, setFilterToEnd] = useState('')
   const [sortBy, setSortBy] = useState<'title' | 'sortOrder' | 'contentType' | 'activeFrom' | 'activeTo' | 'hierarchy'>('sortOrder')
 
   useEffect(() => {
@@ -39,6 +44,12 @@ export default function TilesPage() {
       if (filterParent === '__none__' && t.parentTileId !== null) return false
       if (filterParent === '__has__' && t.parentTileId === null) return false
       if (filterParent && filterParent !== '__none__' && filterParent !== '__has__' && t.parentTileId !== Number(filterParent)) return false
+      if (filterUsage === 'used' && t.assignedScreens.length === 0) return false
+      if (filterUsage === 'unused' && t.assignedScreens.length > 0) return false
+      if (filterFromStart && (!t.activeFrom || t.activeFrom.slice(0, 10) < filterFromStart)) return false
+      if (filterFromEnd && (!t.activeFrom || t.activeFrom.slice(0, 10) > filterFromEnd)) return false
+      if (filterToStart && (!t.activeTo || t.activeTo.slice(0, 10) < filterToStart)) return false
+      if (filterToEnd && (!t.activeTo || t.activeTo.slice(0, 10) > filterToEnd)) return false
       return true
     })
 
@@ -71,7 +82,7 @@ export default function TilesPage() {
     })
 
     return list
-  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus, filterParent, sortBy])
+  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus, filterParent, filterUsage, filterFromStart, filterFromEnd, filterToStart, filterToEnd, sortBy])
 
   const folderTiles = useMemo(() => tiles.filter(t => t.contentType === 'Folder'), [tiles])
 
@@ -127,6 +138,11 @@ export default function TilesPage() {
           <option value="active">Aktiv</option>
           <option value="inactive">Inaktiv</option>
         </select>
+        <select value={filterUsage} onChange={(e) => setFilterUsage(e.target.value)}>
+          <option value="">Alle Zuweisungen</option>
+          <option value="used">Zugewiesen ({tiles.filter(t => t.assignedScreens.length > 0).length})</option>
+          <option value="unused">Nicht zugewiesen ({tiles.filter(t => t.assignedScreens.length === 0).length})</option>
+        </select>
         <select value={filterParent} onChange={(e) => setFilterParent(e.target.value)}>
           <option value="">Alle Ebenen</option>
           <option value="__none__">Nur Root-Inhalte</option>
@@ -143,6 +159,26 @@ export default function TilesPage() {
           <option value="activeTo">Aktiv bis</option>
           <option value="hierarchy">Hierarchie</option>
         </select>
+      </div>
+
+      <div className="filter-bar" style={{ paddingTop: 0 }}>
+        <label style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+          Aktiv von:
+          <input type="date" value={filterFromStart} onChange={e => setFilterFromStart(e.target.value)} style={{ fontSize: '0.8rem' }} />
+          –
+          <input type="date" value={filterFromEnd} onChange={e => setFilterFromEnd(e.target.value)} style={{ fontSize: '0.8rem' }} />
+        </label>
+        <label style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
+          Aktiv bis:
+          <input type="date" value={filterToStart} onChange={e => setFilterToStart(e.target.value)} style={{ fontSize: '0.8rem' }} />
+          –
+          <input type="date" value={filterToEnd} onChange={e => setFilterToEnd(e.target.value)} style={{ fontSize: '0.8rem' }} />
+        </label>
+        {(filterFromStart || filterFromEnd || filterToStart || filterToEnd) && (
+          <button className="btn btn--small" onClick={() => { setFilterFromStart(''); setFilterFromEnd(''); setFilterToStart(''); setFilterToEnd('') }}>
+            Datum zurücksetzen
+          </button>
+        )}
       </div>
 
       {filteredTiles.length === 0 ? (
