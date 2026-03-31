@@ -11,6 +11,22 @@
   border: none;
 }
 
+/* Splitscreen layouts */
+.content-viewer__split {
+  width: 100%;
+  height: 100%;
+  display: grid;
+}
+
+.content-viewer__split--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.content-viewer__split--4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
 .content-viewer__back {
   position: fixed;
   bottom: 24px;

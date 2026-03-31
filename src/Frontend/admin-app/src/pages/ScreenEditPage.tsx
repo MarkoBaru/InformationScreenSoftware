@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { screensApi, tilesApi, TileList } from '../api'
+import { screensApi, tilesApi, categoriesApi, TileList, Category } from '../api'
 import './PageStyles.css'
 
 type DefaultMode = 'None' | 'Static' | 'Slideshow'
@@ -22,12 +22,20 @@ export default function ScreenEditPage() {
   const [orderedTileIds, setOrderedTileIds] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
 
+  // Tile assign filter state
+  const [tileSearch, setTileSearch] = useState('')
+  const [tileFilterType, setTileFilterType] = useState('')
+  const [tileFilterCat, setTileFilterCat] = useState('')
+  const [tileSortBy, setTileSortBy] = useState<'title' | 'contentType' | 'sortOrder'>('title')
+  const [allCategories, setAllCategories] = useState<Category[]>([])
+
   // Drag & drop state
   const dragItem = useRef<number | null>(null)
   const dragOverItem = useRef<number | null>(null)
 
   useEffect(() => {
     tilesApi.list().then(setAllTiles).catch(() => {})
+    categoriesApi.list().then(setAllCategories).catch(() => {})
     if (!isNew) {
       screensApi.get(Number(id)).then((s) => {
         setName(s.name)
@@ -159,6 +167,34 @@ export default function ScreenEditPage() {
 
   const assignedOrdered = orderedTileIds.filter((tid) => assignedTileIds.has(tid))
 
+  const contentTypes = useMemo(() =>
+    [...new Set(allTiles.map(t => t.contentType))].sort(),
+    [allTiles]
+  )
+
+  const filteredAssignTiles = useMemo(() => {
+    let list = [...allTiles]
+    if (tileSearch) {
+      const q = tileSearch.toLowerCase()
+      list = list.filter(t => t.title.toLowerCase().includes(q))
+    }
+    if (tileFilterType) list = list.filter(t => t.contentType === tileFilterType)
+    if (tileFilterCat) {
+      if (tileFilterCat === '__none__') list = list.filter(t => !t.categoryId)
+      else list = list.filter(t => t.categoryName === tileFilterCat)
+    }
+    list.sort((a, b) => {
+      // Assigned tiles first
+      const aAssigned = assignedTileIds.has(a.id) ? 0 : 1
+      const bAssigned = assignedTileIds.has(b.id) ? 0 : 1
+      if (aAssigned !== bAssigned) return aAssigned - bAssigned
+      if (tileSortBy === 'title') return a.title.localeCompare(b.title)
+      if (tileSortBy === 'contentType') return a.contentType.localeCompare(b.contentType)
+      return a.sortOrder - b.sortOrder
+    })
+    return list
+  }, [allTiles, tileSearch, tileFilterType, tileFilterCat, tileSortBy, assignedTileIds])
+
   // Group assigned tiles by category for display (mirrors kiosk rendering)
   const groupedAssigned = (() => {
     const groups: { name: string; tileIds: number[] }[] = []
@@ -278,22 +314,56 @@ export default function ScreenEditPage() {
         )}
 
         <div className="form-group">
-          <label>Inhalte zuweisen</label>
+          <label>Inhalte zuweisen ({assignedTileIds.size} ausgewählt)</label>
           {allTiles.length === 0 ? (
             <p className="hint">Noch keine Inhalte vorhanden. Erstellen Sie zuerst Inhalte.</p>
           ) : (
-            <div className="checkbox-group">
-              {allTiles.map((t) => (
-                <label key={t.id}>
-                  <input
-                    type="checkbox"
-                    checked={assignedTileIds.has(t.id)}
-                    onChange={() => toggleTile(t.id)}
-                  />
-                  {t.title}
-                </label>
-              ))}
-            </div>
+            <>
+              <div className="folder-picker-toolbar">
+                <input
+                  type="text"
+                  placeholder="Suche nach Titel..."
+                  value={tileSearch}
+                  onChange={e => setTileSearch(e.target.value)}
+                  className="folder-picker-toolbar__search"
+                />
+                <select value={tileFilterType} onChange={e => setTileFilterType(e.target.value)}>
+                  <option value="">Alle Typen</option>
+                  {contentTypes.map(ct => <option key={ct} value={ct}>{ct}</option>)}
+                </select>
+                <select value={tileFilterCat} onChange={e => setTileFilterCat(e.target.value)}>
+                  <option value="">Alle Kategorien</option>
+                  <option value="__none__">Ohne Kategorie</option>
+                  {allCategories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+                <select value={tileSortBy} onChange={e => setTileSortBy(e.target.value as 'title' | 'contentType' | 'sortOrder')}>
+                  <option value="title">Name A-Z</option>
+                  <option value="contentType">Typ</option>
+                  <option value="sortOrder">Sortierung</option>
+                </select>
+              </div>
+              <div className="folder-picker-list">
+                {filteredAssignTiles.map((t) => (
+                  <div key={t.id} className="folder-child-row" onClick={() => toggleTile(t.id)} style={{ cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={assignedTileIds.has(t.id)}
+                      onChange={() => toggleTile(t.id)}
+                      style={{ width: 'auto', flexShrink: 0 }}
+                    />
+                    <span className="folder-child-row__icon" style={{ fontSize: '0.9rem' }}>
+                      {({'Link':'🔗','FullscreenImage':'🖼️','Video':'🎬','Pdf':'📄','Article':'📰','Schichtplan':'📋','Stream':'📡','Folder':'📂'} as Record<string,string>)[t.contentType] || '📎'}
+                    </span>
+                    <span className="folder-child-row__title" style={{ color: assignedTileIds.has(t.id) ? 'var(--primary)' : 'var(--text)' }}>{t.title}</span>
+                    <span className="folder-child-row__type">{t.contentType}</span>
+                    {t.categoryName && <span style={{ fontSize: '0.7rem', background: '#e8f0fe', color: 'var(--primary)', padding: '1px 6px', borderRadius: 8 }}>{t.categoryName}</span>}
+                  </div>
+                ))}
+                {filteredAssignTiles.length === 0 && (
+                  <div style={{ padding: 16, textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>Keine Inhalte gefunden.</div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

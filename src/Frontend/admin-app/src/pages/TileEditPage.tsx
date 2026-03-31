@@ -221,6 +221,10 @@ export default function TileEditPage() {
   const [spYear, setSpYear] = useState(new Date().getFullYear().toString())
   const [spMonthMode, setSpMonthMode] = useState<string>('current')
 
+  // Splitscreen für Link-Typ
+  const [splitscreen, setSplitscreen] = useState<0 | 2 | 4>(0)
+  const [splitUrls, setSplitUrls] = useState<string[]>(['', '', '', ''])
+
   useEffect(() => {
     screensApi.list().then(setAllScreens).catch(() => {})
     categoriesApi.list().then(setAllCategories).catch(() => {})
@@ -242,6 +246,17 @@ export default function TileEditPage() {
             setSpBaseUrl(cfg.baseUrl || '')
             setSpYear(cfg.year || new Date().getFullYear().toString())
             setSpMonthMode(cfg.monthMode || 'current')
+          } catch { /* ignore parse errors */ }
+        }
+        // Splitscreen-Config aus articleBody laden
+        if (t.contentType === 'Link' && t.articleBody) {
+          try {
+            const cfg = JSON.parse(t.articleBody)
+            if (cfg.splitscreen === 2 || cfg.splitscreen === 4) {
+              setSplitscreen(cfg.splitscreen)
+              const urls = Array.isArray(cfg.urls) ? cfg.urls : []
+              setSplitUrls([urls[0] || '', urls[1] || '', urls[2] || '', urls[3] || ''])
+            }
           } catch { /* ignore parse errors */ }
         }
         setSortOrder(t.sortOrder)
@@ -280,13 +295,22 @@ export default function TileEditPage() {
         ? JSON.stringify({ baseUrl: spBaseUrl, year: spYear, monthMode: spMonthMode })
         : undefined
 
+      const splitscreenConfig = (contentType === 'Link' && splitscreen > 0)
+        ? JSON.stringify({ splitscreen, urls: splitUrls.slice(0, splitscreen) })
+        : undefined
+
+      let effectiveLinkUrl = (contentType === 'Article' || contentType === 'Schichtplan' || contentType === 'Folder') ? undefined : (linkUrl || undefined)
+      if (contentType === 'Link' && splitscreen > 0) {
+        effectiveLinkUrl = splitUrls[0] || undefined
+      }
+
       const data = {
         title, description: description || undefined,
         imageUrl: imageUrl || undefined,
-        linkUrl: (contentType === 'Article' || contentType === 'Schichtplan' || contentType === 'Folder') ? undefined : (linkUrl || undefined),
+        linkUrl: effectiveLinkUrl,
         linkTarget,
         contentType,
-        articleBody: contentType === 'Article' ? articleBody : (contentType === 'Schichtplan' ? schichtplanConfig : undefined),
+        articleBody: contentType === 'Article' ? articleBody : (contentType === 'Schichtplan' ? schichtplanConfig : (contentType === 'Link' ? splitscreenConfig : undefined)),
         sortOrder, categoryId: categoryId === '' ? undefined : categoryId,
         activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
         activeTo: activeTo ? new Date(activeTo).toISOString() : undefined,
@@ -491,9 +515,38 @@ export default function TileEditPage() {
         {contentType === 'Link' && (
           <>
             <div className="form-group">
-              <label>Link-URL</label>
-              <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} required placeholder="https://..." />
+              <label>Splitscreen</label>
+              <select value={splitscreen} onChange={(e) => setSplitscreen(Number(e.target.value) as 0 | 2 | 4)}>
+                <option value={0}>Aus (Vollbild)</option>
+                <option value={2}>2er Split (nebeneinander)</option>
+                <option value={4}>4er Split (2×2 Raster)</option>
+              </select>
             </div>
+            {splitscreen === 0 && (
+              <div className="form-group">
+                <label>Link-URL</label>
+                <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} required placeholder="https://..." />
+              </div>
+            )}
+            {splitscreen > 0 && (
+              <>
+                {Array.from({ length: splitscreen }, (_, i) => (
+                  <div className="form-group" key={i}>
+                    <label>URL Bereich {i + 1}</label>
+                    <input
+                      value={splitUrls[i]}
+                      onChange={(e) => {
+                        const next = [...splitUrls]
+                        next[i] = e.target.value
+                        setSplitUrls(next)
+                      }}
+                      required
+                      placeholder={`https://... (Bereich ${i + 1})`}
+                    />
+                  </div>
+                ))}
+              </>
+            )}
             <div className="form-group">
               <label>Link-Ziel</label>
               <select value={linkTarget} onChange={(e) => setLinkTarget(e.target.value)}>

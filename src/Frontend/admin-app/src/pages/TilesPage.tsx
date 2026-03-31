@@ -15,6 +15,8 @@ export default function TilesPage() {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterParent, setFilterParent] = useState('')
+  const [sortBy, setSortBy] = useState<'title' | 'sortOrder' | 'contentType' | 'activeFrom' | 'activeTo' | 'hierarchy'>('sortOrder')
 
   useEffect(() => {
     tilesApi.list().then(setTiles).catch(() => {})
@@ -23,7 +25,7 @@ export default function TilesPage() {
   }, [])
 
   const filteredTiles = useMemo(() => {
-    return tiles.filter((t) => {
+    let list = tiles.filter((t) => {
       if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
       if (filterScreen && !t.assignedScreens.includes(filterScreen)) return false
       if (filterCategory) {
@@ -34,9 +36,44 @@ export default function TilesPage() {
       if (filterType && t.contentType !== filterType) return false
       if (filterStatus === 'active' && !t.isActive) return false
       if (filterStatus === 'inactive' && t.isActive) return false
+      if (filterParent === '__none__' && t.parentTileId !== null) return false
+      if (filterParent === '__has__' && t.parentTileId === null) return false
+      if (filterParent && filterParent !== '__none__' && filterParent !== '__has__' && t.parentTileId !== Number(filterParent)) return false
       return true
     })
-  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus])
+
+    list.sort((a, b) => {
+      if (sortBy === 'title') return a.title.localeCompare(b.title)
+      if (sortBy === 'contentType') return a.contentType.localeCompare(b.contentType)
+      if (sortBy === 'activeFrom') {
+        const aFrom = a.activeFrom || ''
+        const bFrom = b.activeFrom || ''
+        if (!aFrom && !bFrom) return 0
+        if (!aFrom) return 1
+        if (!bFrom) return -1
+        return aFrom.localeCompare(bFrom)
+      }
+      if (sortBy === 'activeTo') {
+        const aTo = a.activeTo || ''
+        const bTo = b.activeTo || ''
+        if (!aTo && !bTo) return 0
+        if (!aTo) return 1
+        if (!bTo) return -1
+        return aTo.localeCompare(bTo)
+      }
+      if (sortBy === 'hierarchy') {
+        const aDepth = a.parentTileId === null ? 0 : 1
+        const bDepth = b.parentTileId === null ? 0 : 1
+        if (aDepth !== bDepth) return aDepth - bDepth
+        return a.sortOrder - b.sortOrder
+      }
+      return a.sortOrder - b.sortOrder
+    })
+
+    return list
+  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus, filterParent, sortBy])
+
+  const folderTiles = useMemo(() => tiles.filter(t => t.contentType === 'Folder'), [tiles])
 
   const handleDelete = async (id: number, title: string) => {
     if (!confirm(`Inhalt "${title}" wirklich löschen?`)) return
@@ -77,14 +114,34 @@ export default function TilesPage() {
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
           <option value="">Alle Typen</option>
           <option value="Link">Link</option>
+          <option value="FullscreenImage">Fullscreen-Bild</option>
           <option value="Video">Video</option>
           <option value="Pdf">PDF</option>
           <option value="Article">Beitrag</option>
+          <option value="Schichtplan">Schichtplan</option>
+          <option value="Stream">Stream</option>
+          <option value="Folder">Ordner</option>
         </select>
         <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">Alle Status</option>
           <option value="active">Aktiv</option>
           <option value="inactive">Inaktiv</option>
+        </select>
+        <select value={filterParent} onChange={(e) => setFilterParent(e.target.value)}>
+          <option value="">Alle Ebenen</option>
+          <option value="__none__">Nur Root-Inhalte</option>
+          <option value="__has__">Nur Unterinhalte</option>
+          {folderTiles.map((f) => (
+            <option key={f.id} value={String(f.id)}>In: {f.title}</option>
+          ))}
+        </select>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+          <option value="sortOrder">Sortierung</option>
+          <option value="title">Titel</option>
+          <option value="contentType">Typ</option>
+          <option value="activeFrom">Aktiv von</option>
+          <option value="activeTo">Aktiv bis</option>
+          <option value="hierarchy">Hierarchie</option>
         </select>
       </div>
 
@@ -98,7 +155,7 @@ export default function TilesPage() {
           <thead>
             <tr>
               <th>Bild</th><th>Titel</th><th>Typ</th><th>Kategorie</th>
-              <th>Screens</th><th>Status</th><th>Aktionen</th>
+              <th>Screens</th><th>Aktiv von</th><th>Aktiv bis</th><th>Status</th><th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
@@ -111,7 +168,12 @@ export default function TilesPage() {
                     <span style={{ color: '#ccc' }}>—</span>
                   )}
                 </td>
-                <td><Link to={`/tiles/${t.id}`}>{t.title}</Link></td>
+                <td>
+                  <Link to={`/tiles/${t.id}`}>{t.title}</Link>
+                  {t.parentTileId !== null && (
+                    <span className="badge badge--muted" style={{ marginLeft: 6, fontSize: '0.7em' }}>Unterinhalt</span>
+                  )}
+                </td>
                 <td>
                   <span className="badge badge--muted">
                     {t.contentType === 'Article' ? 'Beitrag' : t.contentType}
@@ -119,6 +181,8 @@ export default function TilesPage() {
                 </td>
                 <td>{t.categoryName || '—'}</td>
                 <td>{t.assignedScreens.join(', ') || '—'}</td>
+                <td>{t.activeFrom ? new Date(t.activeFrom).toLocaleDateString('de-CH') : '—'}</td>
+                <td>{t.activeTo ? new Date(t.activeTo).toLocaleDateString('de-CH') : '—'}</td>
                 <td>
                   <span className={`badge ${t.isActive ? 'badge--success' : 'badge--muted'}`}>
                     {t.isActive ? 'Aktiv' : 'Inaktiv'}

@@ -114,7 +114,27 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
             style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#000' }}
           />
         )
-      default: // Link
+      default: { // Link
+        let splitCfg: { splitscreen?: number; urls?: string[] } | null = null
+        if (articleBody) {
+          try { splitCfg = JSON.parse(articleBody) } catch { /* ignore */ }
+        }
+        if (splitCfg && (splitCfg.splitscreen === 2 || splitCfg.splitscreen === 4)) {
+          const urls = splitCfg.urls || []
+          return (
+            <div className={`content-viewer__split content-viewer__split--${splitCfg.splitscreen}`}>
+              {Array.from({ length: splitCfg.splitscreen }, (_, i) => (
+                <iframe
+                  key={i}
+                  className="content-viewer__frame"
+                  src={urls[i] || ''}
+                  title={`Split ${i + 1}`}
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+                />
+              ))}
+            </div>
+          )
+        }
         return (
           <iframe
             className="content-viewer__frame"
@@ -123,6 +143,7 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
             sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
           />
         )
+      }
     }
   }
 
