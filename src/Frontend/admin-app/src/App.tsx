@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import ScreensPage from './pages/ScreensPage'
 import ScreenEditPage from './pages/ScreenEditPage'
+import ScreenOverviewPage from './pages/ScreenOverviewPage'
 import TilesPage from './pages/TilesPage'
 import TileEditPage from './pages/TileEditPage'
 import MediaPage from './pages/MediaPage'
@@ -31,6 +32,7 @@ function App() {
         <Route path="/screens" element={<Navigate to="/" replace />} />
         <Route path="/screens/new" element={<ScreenEditPage />} />
         <Route path="/screens/:id" element={<ScreenEditPage />} />
+        <Route path="/screens/:id/overview" element={<ScreenOverviewPage />} />
         <Route path="/tiles" element={<TilesPage />} />
         <Route path="/tiles/new" element={<TileEditPage />} />
         <Route path="/tiles/:id" element={<TileEditPage />} />

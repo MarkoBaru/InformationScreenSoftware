@@ -465,3 +465,112 @@
   font-weight: 600;
   font-size: 0.9rem;
 }
+
+/* Tree View (Screen Overview) */
+.tree-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tree-container {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.tree-category {
+  border-bottom: 1px solid var(--border);
+}
+
+.tree-category:last-child {
+  border-bottom: none;
+}
+
+.tree-category__header {
+  padding: 10px 16px;
+  background: #f0f0f0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #555;
+  letter-spacing: 0.02em;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+  transition: background 0.1s;
+}
+
+.tree-node:hover {
+  background: #fafafa;
+}
+
+.tree-node__toggle {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #888;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.tree-node__toggle:hover {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.tree-node__toggle--leaf {
+  cursor: default;
+}
+
+.tree-node__toggle--leaf:hover {
+  background: none;
+}
+
+.tree-node__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.tree-node__title {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--primary);
+  text-decoration: none;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-node__title:hover {
+  text-decoration: underline;
+}
+
+.tree-node__type {
+  font-size: 0.75rem;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.tree-node__category {
+  font-size: 0.72rem;
+  background: #e8f0fe;
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
