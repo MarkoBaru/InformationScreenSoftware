@@ -20,6 +20,10 @@ export default function Layout() {
         </div>
         <nav className="sidebar__nav">
           <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="2" width="12" height="4" rx="1"/><rect x="1" y="18" width="8" height="4" rx="1"/><rect x="15" y="18" width="8" height="4" rx="1"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="12" x2="5" y2="18"/><line x1="19" y1="12" x2="19" y2="18"/></svg>
+            Übersicht
+          </NavLink>
+          <NavLink to="/screens" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             Screens
           </NavLink>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { screensApi, Screen, Tile } from '../api'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { screensApi, Screen, ScreenList, Tile } from '../api'
 import './PageStyles.css'
 
 const CONTENT_ICONS: Record<string, string> = {
@@ -53,6 +53,15 @@ function buildTree(tiles: Tile[]): { roots: TreeNode[]; orphans: TreeNode[] } {
   return { roots, orphans }
 }
 
+function contentSummary(t: Tile): string | null {
+  if (['Link', 'Stream', 'Video', 'Pdf'].includes(t.contentType)) return t.linkUrl || null
+  if (t.contentType === 'FullscreenImage') return t.imageUrl || null
+  if (t.contentType === 'Article' && t.articleBody) {
+    return t.articleBody.replace(/<[^>]*>/g, '').slice(0, 120)
+  }
+  return t.description || null
+}
+
 function TreeNodeRow({ node, depth, expanded, onToggle }: {
   node: TreeNode
   depth: number
@@ -63,6 +72,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
   const hasChildren = node.children.length > 0
   const isExpanded = expanded.has(t.id)
   const icon = CONTENT_ICONS[t.contentType] || '📎'
+  const summary = contentSummary(t)
 
   return (
     <>
@@ -99,6 +109,12 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
         </span>
       </div>
 
+      {summary && (
+        <div className="tree-node__content" style={{ paddingLeft: depth * 28 + 52 }}>
+          {summary}
+        </div>
+      )}
+
       {hasChildren && isExpanded && node.children.map((child) => (
         <TreeNodeRow
           key={child.tile.id}
@@ -112,132 +128,151 @@ function TreeNodeRow({ node, depth, expanded, onToggle }: {
   )
 }
 
-export default function ScreenOverviewPage() {
-  const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
+function ScreenSection({ screenSummary }: { screenSummary: ScreenList }) {
   const [screen, setScreen] = useState<Screen | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
-  useEffect(() => {
-    if (id) {
-      screensApi.get(Number(id)).then(setScreen).catch(() => navigate('/'))
-    }
-  }, [id, navigate])
+  const toggle = useCallback(() => {
+    if (screen) { setOpen(o => !o); return }
+    setLoading(true)
+    screensApi.get(screenSummary.id).then(s => {
+      setScreen(s)
+      setOpen(true)
+    }).finally(() => setLoading(false))
+  }, [screen, screenSummary.id])
 
   const { roots, orphans } = useMemo(() => {
     if (!screen) return { roots: [], orphans: [] }
     return buildTree(screen.tiles)
   }, [screen])
 
-  const expandAll = () => {
-    if (!screen) return
-    const allIds = new Set(screen.tiles.filter(t => t.contentType === 'Folder' || screen.tiles.some(c => c.parentTileId === t.id)).map(t => t.id))
-    setExpanded(allIds)
-  }
-
-  const collapseAll = () => setExpanded(new Set())
-
-  const toggleNode = (nodeId: number) => {
-    setExpanded(prev => {
-      const next = new Set(prev)
-      if (next.has(nodeId)) next.delete(nodeId)
-      else next.add(nodeId)
-      return next
-    })
-  }
-
-  // Group roots by category
   const groupedRoots = useMemo(() => {
-    const groups: { name: string; nodes: TreeNode[] }[] = []
     const catMap = new Map<string, TreeNode[]>()
     for (const node of roots) {
       const catName = node.tile.categoryName || 'Allgemein'
       if (!catMap.has(catName)) catMap.set(catName, [])
       catMap.get(catName)!.push(node)
     }
-    for (const [name, nodes] of catMap) {
-      groups.push({ name, nodes })
-    }
-    return groups
+    return [...catMap.entries()].map(([name, nodes]) => ({ name, nodes }))
   }, [roots])
 
-  if (!screen) {
-    return <div className="page"><p>Laden...</p></div>
+  const expandAll = () => {
+    if (!screen) return
+    setExpanded(new Set(screen.tiles.filter(t =>
+      t.contentType === 'Folder' || screen.tiles.some(c => c.parentTileId === t.id)
+    ).map(t => t.id)))
   }
 
-  const totalTiles = screen.tiles.length
-  const activeTiles = screen.tiles.filter(t => t.isActive).length
-  const folders = screen.tiles.filter(t => t.contentType === 'Folder').length
+  const toggleNode = (nodeId: number) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(nodeId) ? next.delete(nodeId) : next.add(nodeId)
+      return next
+    })
+  }
+
+  const s = screenSummary
+  return (
+    <div className="overview-screen">
+      <div className="overview-screen__header" onClick={toggle}>
+        <span className="overview-screen__toggle">{open ? '▼' : '▶'}</span>
+        <span className={`badge ${s.isActive ? 'badge--success' : 'badge--muted'}`} style={{ fontSize: '0.7rem' }}>
+          {s.isActive ? 'Aktiv' : 'Inaktiv'}
+        </span>
+        <h3 className="overview-screen__name">{s.name}</h3>
+        <span className="overview-screen__slug">/{s.slug}</span>
+        <span className="overview-screen__count">{s.tileCount} Inhalte</span>
+        <Link to={`/screens/${s.id}`} className="btn btn--small" onClick={e => e.stopPropagation()}>Bearbeiten</Link>
+      </div>
+
+      {loading && <div style={{ padding: '12px 24px', color: '#888' }}>Laden...</div>}
+
+      {open && screen && (
+        <div className="overview-screen__body">
+          <div className="tree-toolbar">
+            <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
+            <button className="btn btn--small" onClick={() => setExpanded(new Set())}>Alle einklappen</button>
+          </div>
+          <div className="tree-container" style={{ boxShadow: 'none' }}>
+            {groupedRoots.length === 0 && orphans.length === 0 ? (
+              <div className="empty-state" style={{ padding: 24 }}>
+                <p>Keine Inhalte zugewiesen.</p>
+              </div>
+            ) : (
+              <>
+                {groupedRoots.map(g => (
+                  <div key={g.name} className="tree-category">
+                    <div className="tree-category__header">{g.name}</div>
+                    {g.nodes.map(node => (
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} />
+                    ))}
+                  </div>
+                ))}
+                {orphans.length > 0 && (
+                  <div className="tree-category">
+                    <div className="tree-category__header" style={{ color: '#c62828' }}>Verwaiste Inhalte</div>
+                    {orphans.map(node => (
+                      <TreeNodeRow key={node.tile.id} node={node} depth={0} expanded={expanded} onToggle={toggleNode} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function ScreenOverviewPage() {
+  const [screens, setScreens] = useState<ScreenList[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    screensApi.list().then(setScreens).finally(() => setLoading(false))
+  }, [])
+
+  if (loading) return <div className="page"><p>Laden...</p></div>
+
+  const totalTiles = screens.reduce((sum, s) => sum + s.tileCount, 0)
+  const activeScreens = screens.filter(s => s.isActive).length
 
   return (
     <div className="page">
       <div className="page__header">
-        <h1>Übersicht: {screen.name}</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn--small" onClick={() => navigate(`/screens/${id}`)}>Bearbeiten</button>
-          <a className="btn btn--small" href={`/kiosk/${screen.slug}`} target="_blank" rel="noopener noreferrer">Kiosk ansehen</a>
-        </div>
+        <h1>Übersicht</h1>
       </div>
 
       <div className="stats-grid" style={{ marginBottom: 16 }}>
         <div className="stat-card">
+          <div className="stat-card__number">{screens.length}</div>
+          <div className="stat-card__label">Screens</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card__number">{activeScreens}</div>
+          <div className="stat-card__label">Aktive Screens</div>
+        </div>
+        <div className="stat-card">
           <div className="stat-card__number">{totalTiles}</div>
           <div className="stat-card__label">Inhalte gesamt</div>
         </div>
-        <div className="stat-card">
-          <div className="stat-card__number">{activeTiles}</div>
-          <div className="stat-card__label">Aktiv</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-card__number">{folders}</div>
-          <div className="stat-card__label">Ordner</div>
-        </div>
       </div>
 
-      <div className="tree-toolbar">
-        <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
-        <button className="btn btn--small" onClick={collapseAll}>Alle einklappen</button>
-      </div>
-
-      <div className="tree-container">
-        {groupedRoots.length === 0 && orphans.length === 0 ? (
-          <div className="empty-state">
-            <p>Diesem Screen sind keine Inhalte zugewiesen.</p>
-            <Link to={`/screens/${id}`} className="btn btn--primary">Inhalte zuweisen</Link>
-          </div>
-        ) : (
-          <>
-            {groupedRoots.map((group) => (
-              <div key={group.name} className="tree-category">
-                <div className="tree-category__header">{group.name}</div>
-                {group.nodes.map((node) => (
-                  <TreeNodeRow
-                    key={node.tile.id}
-                    node={node}
-                    depth={0}
-                    expanded={expanded}
-                    onToggle={toggleNode}
-                  />
-                ))}
-              </div>
-            ))}
-            {orphans.length > 0 && (
-              <div className="tree-category">
-                <div className="tree-category__header" style={{ color: '#c62828' }}>Verwaiste Inhalte</div>
-                {orphans.map((node) => (
-                  <TreeNodeRow
-                    key={node.tile.id}
-                    node={node}
-                    depth={0}
-                    expanded={expanded}
-                    onToggle={toggleNode}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {screens.length === 0 ? (
+        <div className="empty-state">
+          <p>Keine Screens vorhanden.</p>
+          <Link to="/screens/new" className="btn btn--primary">Screen erstellen</Link>
+        </div>
+      ) : (
+        <div className="overview-screens-list">
+          {screens.map(s => (
+            <ScreenSection key={s.id} screenSummary={s} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

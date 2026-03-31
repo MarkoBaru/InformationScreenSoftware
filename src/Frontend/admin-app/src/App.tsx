@@ -28,11 +28,10 @@ function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        <Route path="/" element={<ScreensPage />} />
-        <Route path="/screens" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<ScreenOverviewPage />} />
+        <Route path="/screens" element={<ScreensPage />} />
         <Route path="/screens/new" element={<ScreenEditPage />} />
         <Route path="/screens/:id" element={<ScreenEditPage />} />
-        <Route path="/screens/:id/overview" element={<ScreenOverviewPage />} />
         <Route path="/tiles" element={<TilesPage />} />
         <Route path="/tiles/new" element={<TileEditPage />} />
         <Route path="/tiles/:id" element={<TileEditPage />} />
