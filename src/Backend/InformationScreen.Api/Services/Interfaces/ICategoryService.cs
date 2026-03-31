@@ -8,4 +8,5 @@ public interface ICategoryService
     Task<CategoryDto> CreateAsync(CreateCategoryRequest request);
     Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryRequest request);
     Task<bool> DeleteAsync(int id);
+    Task ReorderAsync(List<int> categoryIds);
 }

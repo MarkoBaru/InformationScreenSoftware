@@ -19,26 +19,32 @@ public class CategoryService : ICategoryService
     {
         var categories = await _db.Categories
             .Include(c => c.Tiles)
-            .OrderBy(c => c.Name)
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.Name)
             .ToListAsync();
 
         return categories.Select(c => new CategoryDto(
-            c.Id, c.Name, c.IconUrl, c.Tiles.Count
+            c.Id, c.Name, c.IconUrl, c.Tiles.Count, c.SortOrder
         )).ToList();
     }
 
     public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request)
     {
+        var maxSort = await _db.Categories.AnyAsync()
+            ? await _db.Categories.MaxAsync(c => c.SortOrder)
+            : -1;
+
         var category = new Category
         {
             Name = request.Name,
-            IconUrl = request.IconUrl
+            IconUrl = request.IconUrl,
+            SortOrder = maxSort + 1
         };
 
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
 
-        return new CategoryDto(category.Id, category.Name, category.IconUrl, 0);
+        return new CategoryDto(category.Id, category.Name, category.IconUrl, 0, category.SortOrder);
     }
 
     public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryRequest request)
@@ -51,7 +57,7 @@ public class CategoryService : ICategoryService
 
         await _db.SaveChangesAsync();
         return new CategoryDto(category.Id, category.Name, category.IconUrl,
-            await _db.Tiles.CountAsync(t => t.CategoryId == id));
+            await _db.Tiles.CountAsync(t => t.CategoryId == id), category.SortOrder);
     }
 
     public async Task<bool> DeleteAsync(int id)
@@ -62,5 +68,16 @@ public class CategoryService : ICategoryService
         _db.Categories.Remove(category);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task ReorderAsync(List<int> categoryIds)
+    {
+        var categories = await _db.Categories.ToListAsync();
+        for (int i = 0; i < categoryIds.Count; i++)
+        {
+            var cat = categories.FirstOrDefault(c => c.Id == categoryIds[i]);
+            if (cat != null) cat.SortOrder = i;
+        }
+        await _db.SaveChangesAsync();
     }
 }

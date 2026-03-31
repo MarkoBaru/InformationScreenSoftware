@@ -131,7 +131,8 @@ public record CategoryDto(
     int Id,
     string Name,
     string? IconUrl,
-    int TileCount
+    int TileCount,
+    int SortOrder
 );
 
 public record CreateCategoryRequest(
@@ -142,6 +143,10 @@ public record CreateCategoryRequest(
 public record UpdateCategoryRequest(
     string Name,
     string? IconUrl
+);
+
+public record ReorderCategoriesRequest(
+    List<int> CategoryIds
 );
 
 // === Media DTOs ===

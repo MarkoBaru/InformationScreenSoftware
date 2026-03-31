@@ -60,7 +60,7 @@ export interface TileList extends Tile {
 }
 
 export interface Category {
-  id: number; name: string; iconUrl: string | null; tileCount: number;
+  id: number; name: string; iconUrl: string | null; tileCount: number; sortOrder: number;
 }
 
 export interface MediaAsset {
@@ -100,6 +100,8 @@ export const categoriesApi = {
   update: (id: number, data: { name: string; iconUrl?: string }) =>
     request<Category>(`${API}/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/categories/${id}`, { method: 'DELETE' }),
+  reorder: (categoryIds: number[]) =>
+    request<void>(`${API}/categories/reorder`, { method: 'PUT', body: JSON.stringify({ categoryIds }) }),
 }
 
 // Media API

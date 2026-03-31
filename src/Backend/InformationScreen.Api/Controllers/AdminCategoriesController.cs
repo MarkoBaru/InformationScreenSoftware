@@ -44,4 +44,11 @@ public class AdminCategoriesController : ControllerBase
         if (!await _categoryService.DeleteAsync(id)) return NotFound();
         return NoContent();
     }
+
+    [HttpPut("reorder")]
+    public async Task<IActionResult> Reorder([FromBody] ReorderCategoriesRequest request)
+    {
+        await _categoryService.ReorderAsync(request.CategoryIds);
+        return NoContent();
+    }
 }
