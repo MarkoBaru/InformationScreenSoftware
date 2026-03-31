@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.Services.Mongo;
+using InformationScreen.Api.Services.Interfaces;
 
 namespace InformationScreen.Api.Controllers;
 
@@ -8,10 +9,12 @@ namespace InformationScreen.Api.Controllers;
 public class HealthController : ControllerBase
 {
     private readonly MongoContext? _mongoContext;
+    private readonly IScreenService _screenService;
 
-    public HealthController(IServiceProvider services)
+    public HealthController(IServiceProvider services, IScreenService screenService)
     {
         _mongoContext = services.GetService<MongoContext>();
+        _screenService = screenService;
     }
 
     [HttpGet("db")]
@@ -22,5 +25,19 @@ public class HealthController : ControllerBase
 
         var result = await _mongoContext.DiagnoseAsync();
         return Ok(result);
+    }
+
+    [HttpGet("screens")]
+    public async Task<IActionResult> TestScreens()
+    {
+        try
+        {
+            var screens = await _screenService.GetAllAsync();
+            return Ok(new { count = screens.Count, screens });
+        }
+        catch (Exception ex)
+        {
+            return Ok($"ERROR: {ex.GetType().Name}: {ex.Message}\nStackTrace: {ex.StackTrace}\nInner: {ex.InnerException?.Message}");
+        }
     }
 }
