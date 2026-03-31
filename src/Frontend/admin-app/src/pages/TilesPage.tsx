@@ -1,17 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { tilesApi, screensApi, categoriesApi, TileList, ScreenList, Category } from '../api'
+import { tilesApi, categoriesApi, TileList, Category } from '../api'
 import './PageStyles.css'
 
 export default function TilesPage() {
   const [tiles, setTiles] = useState<TileList[]>([])
-  const [allScreens, setAllScreens] = useState<ScreenList[]>([])
   const [allCategories, setAllCategories] = useState<Category[]>([])
   const navigate = useNavigate()
 
   // Filters
   const [search, setSearch] = useState('')
-  const [filterScreen, setFilterScreen] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -25,14 +23,12 @@ export default function TilesPage() {
 
   useEffect(() => {
     tilesApi.list().then(setTiles).catch(() => {})
-    screensApi.list().then(setAllScreens).catch(() => {})
     categoriesApi.list().then(setAllCategories).catch(() => {})
   }, [])
 
   const filteredTiles = useMemo(() => {
     let list = tiles.filter((t) => {
       if (search && !t.title.toLowerCase().includes(search.toLowerCase())) return false
-      if (filterScreen && !t.assignedScreens.includes(filterScreen)) return false
       if (filterCategory) {
         if (filterCategory === '__none__') {
           if (t.categoryId !== null) return false
@@ -83,7 +79,7 @@ export default function TilesPage() {
     })
 
     return list
-  }, [tiles, search, filterScreen, filterCategory, filterType, filterStatus, filterParent, filterUsage, filterFromStart, filterFromEnd, filterToStart, filterToEnd, sortBy])
+  }, [tiles, search, filterCategory, filterType, filterStatus, filterParent, filterUsage, filterFromStart, filterFromEnd, filterToStart, filterToEnd, sortBy])
 
   const folderTiles = useMemo(() => tiles.filter(t => t.contentType === 'Folder'), [tiles])
 
@@ -110,12 +106,6 @@ export default function TilesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <select value={filterScreen} onChange={(e) => setFilterScreen(e.target.value)}>
-          <option value="">Alle Screens</option>
-          {allScreens.map((s) => (
-            <option key={s.id} value={s.name}>{s.name}</option>
-          ))}
-        </select>
         <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
           <option value="">Alle Kategorien</option>
           <option value="__none__">Ohne Kategorie</option>
@@ -192,7 +182,7 @@ export default function TilesPage() {
           <thead>
             <tr>
               <th>Bild</th><th>Titel</th><th>Typ</th><th>Kategorie</th>
-              <th>Screens</th><th>Aktiv von</th><th>Aktiv bis</th><th>Status</th><th>Aktionen</th>
+              <th>Aktiv von</th><th>Aktiv bis</th><th>Status</th><th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
@@ -217,7 +207,6 @@ export default function TilesPage() {
                   </span>
                 </td>
                 <td>{t.categoryName || '—'}</td>
-                <td>{t.assignedScreens.join(', ') || '—'}</td>
                 <td>{t.activeFrom ? new Date(t.activeFrom).toLocaleDateString('de-CH') : '—'}</td>
                 <td>{t.activeTo ? new Date(t.activeTo).toLocaleDateString('de-CH') : '—'}</td>
                 <td>

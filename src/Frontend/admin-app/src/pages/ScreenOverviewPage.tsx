@@ -63,7 +63,7 @@ function contentSummary(t: Tile): string | null {
 }
 
 function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens }: {
-  folderId: number
+  folderId: number | null
   allTiles: TileList[]
   onChanged: () => void
   screenId: number
@@ -76,13 +76,17 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
   const [busy, setBusy] = useState<number | null>(null)
 
   const screenName = allScreens.find(s => s.id === screenId)?.name || ''
+  const isRoot = folderId === null
   const childIds = useMemo(() => new Set(
-    allTiles.filter(t => t.parentTileId === folderId && t.assignedScreens.includes(screenName)).map(t => t.id)
-  ), [allTiles, folderId, screenName])
+    allTiles.filter(t => isRoot
+      ? t.parentTileId === null && t.assignedScreens.includes(screenName)
+      : t.parentTileId === folderId && t.assignedScreens.includes(screenName)
+    ).map(t => t.id)
+  ), [allTiles, folderId, isRoot, screenName])
   const categories = useMemo(() => [...new Set(allTiles.filter(t => t.categoryName).map(t => t.categoryName!))].sort(), [allTiles])
 
   const filtered = useMemo(() => {
-    let list = allTiles.filter(t => t.id !== folderId && t.contentType !== 'Folder')
+    let list = allTiles.filter(t => t.id !== folderId && (isRoot || t.contentType !== 'Folder'))
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(t => t.title.toLowerCase().includes(q))
@@ -129,7 +133,7 @@ function FolderChildPicker({ folderId, allTiles, onChanged, screenId, allScreens
         articleBody: tile.articleBody || undefined, sortOrder: tile.sortOrder,
         isActive: tile.isActive, activeFrom: tile.activeFrom || undefined,
         activeTo: tile.activeTo || undefined,
-        parentTileId: isChild ? undefined : folderId,
+        parentTileId: isRoot ? (tile.parentTileId ?? undefined) : (isChild ? undefined : folderId),
         categoryId: tile.categoryId || undefined,
         screenIds: newScreenIds,
       })
@@ -426,6 +430,7 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [showRootSort, setShowRootSort] = useState(false)
+  const [showRootPicker, setShowRootPicker] = useState(false)
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -505,12 +510,20 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
           <div className="tree-toolbar">
             <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
             <button className="btn btn--small" onClick={() => setExpanded(new Set())}>Alle einklappen</button>
+            <button className="btn btn--small" onClick={() => { setShowRootPicker(p => !p); if (!showRootPicker) setShowRootSort(false) }} style={{ marginLeft: 'auto' }}>
+              {showRootPicker ? '− Picker schliessen' : '+ Inhalte zuweisen'}
+            </button>
             {roots.length > 1 && (
-              <button className="btn btn--small" onClick={() => setShowRootSort(p => !p)} style={{ marginLeft: 'auto' }}>
+              <button className="btn btn--small" onClick={() => { setShowRootSort(p => !p); if (!showRootSort) setShowRootPicker(false) }}>
                 {showRootSort ? '− Sortierung schliessen' : '↕ Inhalte sortieren'}
               </button>
             )}
           </div>
+          {showRootPicker && (
+            <div style={{ padding: '0 12px 8px' }}>
+              <FolderChildPicker folderId={null} allTiles={allTiles} onChanged={reloadTiles} screenId={screenSummary.id} allScreens={allScreens} />
+            </div>
+          )}
           {showRootSort && (
             <div style={{ padding: '0 12px 8px' }}>
               <FolderSortPanel children={roots.map(n => n.tile)} onChanged={() => { reloadTiles(); setShowRootSort(false) }} />
@@ -520,6 +533,11 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
             {groupedRoots.length === 0 && orphans.length === 0 ? (
               <div className="empty-state" style={{ padding: 24 }}>
                 <p>Keine Inhalte zugewiesen.</p>
+                {!showRootPicker && (
+                  <button className="btn btn--primary" onClick={() => setShowRootPicker(true)}>
+                    + Inhalte zuweisen
+                  </button>
+                )}
               </div>
             ) : (
               <>
