@@ -348,12 +348,13 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
     <>
       <div
         className="tree-node"
-        style={{ paddingLeft: depth * 28 + 12 }}
+        style={{ paddingLeft: depth * 28 + 12, cursor: hasChildren ? 'pointer' : 'default' }}
+        onClick={() => { if (hasChildren) onToggle(t.id) }}
       >
         {hasChildren ? (
           <button
             className="tree-node__toggle"
-            onClick={() => onToggle(t.id)}
+            onClick={(e) => { e.stopPropagation(); onToggle(t.id) }}
             aria-label={isExpanded ? 'Einklappen' : 'Aufklappen'}
           >
             {isExpanded ? '▼' : '▶'}
@@ -364,9 +365,9 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
 
         <span className="tree-node__icon">{icon}</span>
 
-        <Link to={`/tiles/${t.id}`} className="tree-node__title">
+        <span className="tree-node__title" style={{ color: 'var(--text)' }}>
           {t.title}
-        </Link>
+        </span>
 
         <span className="tree-node__type">{t.contentType}</span>
 
@@ -377,6 +378,16 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
         <span className={`badge ${t.isActive ? 'badge--success' : 'badge--muted'}`} style={{ fontSize: '0.7rem' }}>
           {t.isActive ? 'Aktiv' : 'Inaktiv'}
         </span>
+
+        <Link
+          to={`/tiles/${t.id}`}
+          className="btn btn--small"
+          style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4, textDecoration: 'none' }}
+          title="Bearbeiten"
+          onClick={(e) => e.stopPropagation()}
+        >
+          ✏️
+        </Link>
 
         {t.contentType === 'Folder' && (
           <button
