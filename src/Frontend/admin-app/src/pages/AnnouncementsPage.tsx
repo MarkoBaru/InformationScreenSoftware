@@ -18,9 +18,14 @@ export default function AnnouncementsPage() {
   const [saving, setSaving] = useState(false)
 
   const [filterStatus, setFilterStatus] = useState('')
+  const [loadError, setLoadError] = useState('')
 
   const load = () => {
-    announcementsApi.list().then(setItems).catch(() => {})
+    setLoadError('')
+    announcementsApi.list().then(setItems).catch(err => {
+      console.error('Announcements load failed:', err)
+      setLoadError('Nachrichten konnten nicht geladen werden: ' + (err as Error).message)
+    })
     screensApi.list().then(setAllScreens).catch(() => {})
   }
 
@@ -190,7 +195,14 @@ export default function AnnouncementsPage() {
         </select>
       </div>
 
-      {filtered.length === 0 ? (
+      {loadError && (
+        <div style={{ background: '#fee', color: '#c00', padding: '12px 16px', borderRadius: 8, marginBottom: 12 }}>
+          {loadError}
+          <button className="btn" style={{ marginLeft: 12 }} onClick={load}>Erneut laden</button>
+        </div>
+      )}
+
+      {filtered.length === 0 && !loadError ? (
         <div className="empty-state">
           <p>Keine Nachrichten vorhanden.</p>
           {!showForm && <button className="btn btn--primary" onClick={openNew}>Erste Nachricht erstellen</button>}
