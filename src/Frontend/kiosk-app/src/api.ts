@@ -5,6 +5,7 @@ export interface ScreenData {
   defaultContentType: 'None' | 'Video' | 'Slideshow' | 'Static'
   defaultContentData: string | null
   idleTimeoutSeconds: number
+  slideshowIntervalSeconds: number
   isActive: boolean
   tiles: TileData[]
 }

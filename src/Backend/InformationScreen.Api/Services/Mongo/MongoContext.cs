@@ -121,6 +121,7 @@ public class MongoScreen
     public string DefaultContentType { get; set; } = "None";
     public string? DefaultContentData { get; set; }
     public int IdleTimeoutSeconds { get; set; } = 120;
+    public int SlideshowIntervalSeconds { get; set; } = 10;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

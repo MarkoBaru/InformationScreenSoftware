@@ -11,6 +11,7 @@ public record ScreenDto(
     DefaultContentType DefaultContentType,
     string? DefaultContentData,
     int IdleTimeoutSeconds,
+    int SlideshowIntervalSeconds,
     bool IsActive,
     List<TileDto> Tiles
 );
@@ -30,7 +31,8 @@ public record CreateScreenRequest(
     string Slug,
     DefaultContentType DefaultContentType,
     string? DefaultContentData,
-    int IdleTimeoutSeconds
+    int IdleTimeoutSeconds,
+    int SlideshowIntervalSeconds = 10
 );
 
 public record UpdateScreenRequest(
@@ -39,7 +41,8 @@ public record UpdateScreenRequest(
     DefaultContentType DefaultContentType,
     string? DefaultContentData,
     int IdleTimeoutSeconds,
-    bool IsActive
+    int SlideshowIntervalSeconds = 10,
+    bool IsActive = true
 );
 
 // === Tile DTOs ===

@@ -50,7 +50,7 @@ public class ScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.IsActive, tiles
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, tiles
         );
     }
 
@@ -94,7 +94,7 @@ public class ScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.IsActive, tiles
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, tiles
         );
     }
 
@@ -106,7 +106,8 @@ public class ScreenService : IScreenService
             Slug = request.Slug,
             DefaultContentType = request.DefaultContentType,
             DefaultContentData = request.DefaultContentData,
-            IdleTimeoutSeconds = request.IdleTimeoutSeconds
+            IdleTimeoutSeconds = request.IdleTimeoutSeconds,
+            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds
         };
 
         _db.Screens.Add(screen);
@@ -115,7 +116,7 @@ public class ScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.IsActive, new List<TileDto>()
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, new List<TileDto>()
         );
     }
 
@@ -129,6 +130,7 @@ public class ScreenService : IScreenService
         screen.DefaultContentType = request.DefaultContentType;
         screen.DefaultContentData = request.DefaultContentData;
         screen.IdleTimeoutSeconds = request.IdleTimeoutSeconds;
+        screen.SlideshowIntervalSeconds = request.SlideshowIntervalSeconds;
         screen.IsActive = request.IsActive;
         screen.UpdatedAt = DateTime.UtcNow;
 

@@ -41,7 +41,7 @@ export interface ScreenList {
 export interface Screen {
   id: number; name: string; slug: string;
   defaultContentType: string; defaultContentData: string | null;
-  idleTimeoutSeconds: number; isActive: boolean;
+  idleTimeoutSeconds: number; slideshowIntervalSeconds: number; isActive: boolean;
   tiles: Tile[];
 }
 
@@ -72,9 +72,9 @@ export interface MediaAsset {
 export const screensApi = {
   list: () => request<ScreenList[]>(`${API}/screens`),
   get: (id: number) => request<Screen>(`${API}/screens/${id}`),
-  create: (data: { name: string; slug: string; defaultContentType: string; defaultContentData?: string; idleTimeoutSeconds: number }) =>
+  create: (data: { name: string; slug: string; defaultContentType: string; defaultContentData?: string; idleTimeoutSeconds: number; slideshowIntervalSeconds?: number }) =>
     request<Screen>(`${API}/screens`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: { name: string; slug: string; defaultContentType: string; defaultContentData?: string; idleTimeoutSeconds: number; isActive: boolean }) =>
+  update: (id: number, data: { name: string; slug: string; defaultContentType: string; defaultContentData?: string; idleTimeoutSeconds: number; slideshowIntervalSeconds?: number; isActive: boolean }) =>
     request<Screen>(`${API}/screens/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/screens/${id}`, { method: 'DELETE' }),
   updateTiles: (id: number, tiles: { tileId: number; sortOrderOverride?: number }[]) =>

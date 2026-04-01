@@ -23,7 +23,7 @@ export default function IdleOverlay({ screen, onInteraction }: IdleOverlayProps)
         .map(id => screen.tiles.find(t => t.id === id))
         .filter((t): t is NonNullable<typeof t> => !!t)
       if (tiles.length > 0) {
-        return <TileContentRotation tiles={tiles} onInteraction={onInteraction} />
+        return <TileContentRotation tiles={tiles} intervalMs={(screen.slideshowIntervalSeconds ?? 10) * 1000} onInteraction={onInteraction} />
       }
     } catch { /* ignore */ }
     return null
@@ -32,7 +32,7 @@ export default function IdleOverlay({ screen, onInteraction }: IdleOverlayProps)
   return null
 }
 
-function TileContentRotation({ tiles, onInteraction }: { tiles: NonNullable<ReturnType<typeof Array.prototype.find>>[], onInteraction: () => void }) {
+function TileContentRotation({ tiles, intervalMs, onInteraction }: { tiles: NonNullable<ReturnType<typeof Array.prototype.find>>[], intervalMs: number, onInteraction: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const nextSlide = useCallback(() => {
@@ -41,9 +41,9 @@ function TileContentRotation({ tiles, onInteraction }: { tiles: NonNullable<Retu
 
   useEffect(() => {
     if (tiles.length <= 1) return
-    const timer = setInterval(nextSlide, 10000)
+    const timer = setInterval(nextSlide, intervalMs)
     return () => clearInterval(timer)
-  }, [nextSlide, tiles.length])
+  }, [nextSlide, intervalMs, tiles.length])
 
   const tile = tiles[currentIndex]
 

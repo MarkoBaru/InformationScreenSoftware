@@ -51,7 +51,8 @@ public class MongoScreenService : IScreenService
             Slug = request.Slug,
             DefaultContentType = request.DefaultContentType.ToString(),
             DefaultContentData = request.DefaultContentData,
-            IdleTimeoutSeconds = request.IdleTimeoutSeconds
+            IdleTimeoutSeconds = request.IdleTimeoutSeconds,
+            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds
         };
 
         Console.WriteLine($"[MongoScreenService] Inserting screen Id={screen.Id}, Name={screen.Name}");
@@ -69,7 +70,7 @@ public class MongoScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             request.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.IsActive, new List<TileDto>()
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, new List<TileDto>()
         );
     }
 
@@ -81,6 +82,7 @@ public class MongoScreenService : IScreenService
             .Set(s => s.DefaultContentType, request.DefaultContentType.ToString())
             .Set(s => s.DefaultContentData, request.DefaultContentData)
             .Set(s => s.IdleTimeoutSeconds, request.IdleTimeoutSeconds)
+            .Set(s => s.SlideshowIntervalSeconds, request.SlideshowIntervalSeconds)
             .Set(s => s.IsActive, request.IsActive)
             .Set(s => s.UpdatedAt, DateTime.UtcNow);
 
@@ -120,7 +122,7 @@ public class MongoScreenService : IScreenService
             return new ScreenDto(
                 screen.Id, screen.Name, screen.Slug,
                 Enum.Parse<DefaultContentType>(screen.DefaultContentType),
-                screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.IsActive,
+                screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
                 new List<TileDto>()
             );
         }
@@ -165,7 +167,7 @@ public class MongoScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             Enum.Parse<DefaultContentType>(screen.DefaultContentType),
-            screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.IsActive,
+            screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
             tileDtos
         );
     }

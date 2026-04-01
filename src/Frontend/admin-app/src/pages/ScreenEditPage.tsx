@@ -15,6 +15,7 @@ export default function ScreenEditPage() {
   const [defaultMode, setDefaultMode] = useState<DefaultMode>('None')
   const [selectedTileId, setSelectedTileId] = useState('')
   const [slideshowTileIds, setSlideshowTileIds] = useState<Set<number>>(new Set())
+  const [slideshowIntervalSeconds, setSlideshowIntervalSeconds] = useState(10)
   const [idleTimeoutSeconds, setIdleTimeoutSeconds] = useState(120)
   const [isActive, setIsActive] = useState(true)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
@@ -27,6 +28,7 @@ export default function ScreenEditPage() {
         setName(s.name)
         setSlug(s.slug)
         setIdleTimeoutSeconds(s.idleTimeoutSeconds)
+        setSlideshowIntervalSeconds(s.slideshowIntervalSeconds ?? 10)
         setIsActive(s.isActive)
 
         // Map backend types to our UI mode
@@ -91,12 +93,13 @@ export default function ScreenEditPage() {
           name, slug, defaultContentType,
           defaultContentData,
           idleTimeoutSeconds,
+          slideshowIntervalSeconds,
         })
       } else {
         await screensApi.update(Number(id), {
           name, slug, defaultContentType,
           defaultContentData,
-          idleTimeoutSeconds, isActive,
+          idleTimeoutSeconds, slideshowIntervalSeconds, isActive,
         })
       }
       navigate('/screens')
@@ -189,6 +192,15 @@ export default function ScreenEditPage() {
               </div>
             )}
             <p className="hint">Ausgewählte Inhalte werden als Slideshow durchgewechselt</p>
+            <div style={{ marginTop: 12 }}>
+              <label>Wechselintervall (Sekunden)</label>
+              <input
+                type="number" min={3} max={300}
+                value={slideshowIntervalSeconds}
+                onChange={(e) => setSlideshowIntervalSeconds(Number(e.target.value))}
+                style={{ width: 120, marginLeft: 8 }}
+              />
+            </div>
           </div>
         )}
 
