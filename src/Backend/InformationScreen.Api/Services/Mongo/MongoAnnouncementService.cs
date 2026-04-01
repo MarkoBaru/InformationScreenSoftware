@@ -66,7 +66,7 @@ public class MongoAnnouncementService : IAnnouncementService
 
     public async Task<List<AnnouncementDto>> GetActiveForScreenAsync(int screenId)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var all = await Announcements.Find(a => a.IsActive).ToListAsync();
 
         return all

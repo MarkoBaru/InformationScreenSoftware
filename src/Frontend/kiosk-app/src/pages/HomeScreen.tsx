@@ -9,6 +9,15 @@ import IdleOverlay from '../components/IdleOverlay'
 import './HomeScreen.css'
 import '../components/ContentViewer.css'
 
+function useClock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
+
 export default function HomeScreen() {
   const { slug = 'default' } = useParams<{ slug: string }>()
   const { screen, loading, error } = useScreenData(slug)
@@ -16,6 +25,7 @@ export default function HomeScreen() {
   const [showIdle, setShowIdle] = useState(false)
   const [folderStack, setFolderStack] = useState<TileData[]>([])
   const [announcements, setAnnouncements] = useState<AnnouncementData[]>([])
+  const now = useClock()
 
   // Poll announcements when screen data is available
   useEffect(() => {
@@ -97,36 +107,18 @@ export default function HomeScreen() {
   // Current folder context
   const currentFolderId = folderStack.length > 0 ? folderStack[folderStack.length - 1].id : null
 
-  // Group tiles by category, filtered by schedule and current folder context
-  const groupedTiles = useMemo(() => {
+  // Flat list of tiles filtered by schedule and current folder context (no category grouping)
+  const filteredTiles = useMemo(() => {
     if (!screen) return []
-
-    // Filter: only tiles in the current folder level, scheduled active
-    const filtered = screen.tiles.filter(tile => {
-      // Parent filter: show only tiles belonging to current folder (or root if no folder)
+    return screen.tiles.filter(tile => {
       if (currentFolderId !== null) {
         if (tile.parentTileId !== currentFolderId) return false
       } else {
         if (tile.parentTileId !== null) return false
       }
-      // Schedule filter
       if (!isTileScheduledActive(tile)) return false
       return true
     })
-
-    const groups: { name: string; tiles: typeof screen.tiles }[] = []
-    const catMap = new Map<string, typeof screen.tiles>()
-
-    for (const tile of filtered) {
-      const catName = tile.categoryName || 'Allgemein'
-      if (!catMap.has(catName)) catMap.set(catName, [])
-      catMap.get(catName)!.push(tile)
-    }
-
-    for (const [name, tiles] of catMap) {
-      groups.push({ name, tiles })
-    }
-    return groups
   }, [screen, currentFolderId, isTileScheduledActive])
 
   if (loading) {
@@ -147,20 +139,11 @@ export default function HomeScreen() {
     )
   }
 
+  const dateStr = now.toLocaleDateString('de-CH', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+  const timeStr = now.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
+
   return (
     <div className="home-screen">
-      {announcements.length > 0 && !viewingTile && !showIdle && (
-        <div className="announcement-banner">
-          <div className="announcement-banner__inner">
-            {announcements.map(a => (
-              <span key={a.id} className="announcement-banner__item">
-                <strong>{a.title}</strong>{a.message ? ` — ${a.message}` : ''}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
       {showIdle && screen.defaultContentType !== 'None' && (
         <IdleOverlay screen={screen} onInteraction={handleWakeUp} />
       )}
@@ -175,9 +158,14 @@ export default function HomeScreen() {
         />
       ) : (
         <>
-          <header className="home-screen__header">
+          {/* Top bar: date/time + logo */}
+          <header className="home-screen__topbar">
+            <div className="home-screen__datetime">
+              <span className="home-screen__time">{timeStr}</span>
+              <span className="home-screen__date">{dateStr}</span>
+            </div>
             {folderStack.length > 0 ? (
-              <h1 style={{ margin: 0 }}>
+              <h1 className="home-screen__title">
                 {folderStack.map((f, i) => (
                   <span key={f.id}>
                     {i > 0 && ' › '}
@@ -191,17 +179,32 @@ export default function HomeScreen() {
                 ))}
               </h1>
             ) : (
-              <h1>{screen.name}</h1>
+              <h1 className="home-screen__title">{screen.name}</h1>
             )}
+            <img src="/kiosk/ABB-Logo.svg" alt="ABB" className="home-screen__logo" />
           </header>
-          <div className="home-screen__categories">
-            {groupedTiles.map((group) => (
-              <section key={group.name} className="home-screen__category-section">
-                <h2 className="home-screen__category-title">{group.name}</h2>
-                <TileGrid tiles={group.tiles} onTileClick={handleTileClick} />
-              </section>
-            ))}
+
+          {/* Breaking news ticker */}
+          {announcements.length > 0 && (
+            <div className="news-ticker">
+              <span className="news-ticker__label">NEWS</span>
+              <div className="news-ticker__track">
+                <div className="news-ticker__scroll">
+                  {announcements.map(a => (
+                    <span key={a.id} className="news-ticker__item">
+                      <strong>{a.title}</strong>{a.message ? ` — ${a.message}` : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tile grid (flat, no category grouping) */}
+          <div className="home-screen__tiles">
+            <TileGrid tiles={filteredTiles} onTileClick={handleTileClick} />
           </div>
+
           {folderStack.length > 0 && (
             <button className="content-viewer__back" onClick={handleFolderBack} type="button">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

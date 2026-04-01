@@ -19,9 +19,6 @@ export default function TileCard({ tile, onClick }: TileCardProps) {
         {tile.description && (
           <p className="tile-card__desc">{tile.description}</p>
         )}
-        {tile.categoryName && (
-          <span className="tile-card__category">{tile.categoryName}</span>
-        )}
       </div>
     </button>
   )
