@@ -390,6 +390,18 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
         </Link>
 
         {t.contentType === 'Folder' && (
+          <Link
+            to={`/tiles/new?parentTileId=${t.id}`}
+            className="btn btn--small btn--primary"
+            style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4, textDecoration: 'none' }}
+            title="Neuen Inhalt in diesem Ordner erstellen"
+            onClick={(e) => e.stopPropagation()}
+          >
+            + Neu
+          </Link>
+        )}
+
+        {t.contentType === 'Folder' && (
           <button
             className="btn btn--small"
             style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4 }}
@@ -451,10 +463,25 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
   const [screen, setScreen] = useState<Screen | null>(null)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [loading, setLoading] = useState(false)
-  const [open, setOpen] = useState(false)
-  const [expanded, setExpanded] = useState<Set<number>>(new Set())
+  const [open, setOpen] = useState(() => {
+    try { return sessionStorage.getItem(`screen-open-${screenSummary.id}`) === '1' } catch { return false }
+  })
+  const [expanded, setExpanded] = useState<Set<number>>(() => {
+    try {
+      const raw = sessionStorage.getItem(`screen-expanded-${screenSummary.id}`)
+      return raw ? new Set(JSON.parse(raw) as number[]) : new Set()
+    } catch { return new Set() }
+  })
   const [showRootSort, setShowRootSort] = useState(false)
   const [showRootPicker, setShowRootPicker] = useState(false)
+
+  // Persist open/expanded state to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem(`screen-open-${screenSummary.id}`, open ? '1' : '0') } catch { /* ignore */ }
+  }, [open, screenSummary.id])
+  useEffect(() => {
+    try { sessionStorage.setItem(`screen-expanded-${screenSummary.id}`, JSON.stringify([...expanded])) } catch { /* ignore */ }
+  }, [expanded, screenSummary.id])
 
   const loadData = useCallback(() => {
     setLoading(true)
@@ -467,6 +494,11 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
       setOpen(true)
     }).finally(() => setLoading(false))
   }, [screenSummary.id])
+
+  // Auto-load data if section was previously open (restored from sessionStorage)
+  useEffect(() => {
+    if (open && !screen && !loading) loadData()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = useCallback(() => {
     if (screen) { setOpen(o => !o); return }
@@ -534,6 +566,7 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
           <div className="tree-toolbar">
             <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
             <button className="btn btn--small" onClick={() => setExpanded(new Set())}>Alle einklappen</button>
+            <Link to="/tiles/new" className="btn btn--small btn--primary" style={{ textDecoration: 'none' }}>+ Neuer Inhalt</Link>
             <button className="btn btn--small" onClick={() => { setShowRootPicker(p => !p); if (!showRootPicker) setShowRootSort(false) }} style={{ marginLeft: 'auto' }}>
               {showRootPicker ? '− Picker schliessen' : '+ Inhalte zuweisen'}
             </button>

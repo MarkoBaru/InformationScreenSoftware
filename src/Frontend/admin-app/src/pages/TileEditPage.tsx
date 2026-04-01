@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { tilesApi, categoriesApi, mediaApi, Category, MediaAsset, TileList } from '../api'
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
@@ -8,6 +8,7 @@ type ContentType = 'Link' | 'FullscreenImage' | 'Video' | 'Pdf' | 'Article' | 'S
 
 export default function TileEditPage() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const isNew = !id
   const navigate = useNavigate()
 
@@ -24,7 +25,10 @@ export default function TileEditPage() {
   const [activeTo, setActiveTo] = useState('')
   const [newsFrom, setNewsFrom] = useState('')
   const [newsTo, setNewsTo] = useState('')
-  const [parentTileId, setParentTileId] = useState<number | ''>('')
+  const [parentTileId, setParentTileId] = useState<number | ''>(() => {
+    const qp = searchParams.get('parentTileId')
+    return qp ? Number(qp) : ''
+  })
   const [categoryId, setCategoryId] = useState<number | ''>('')
   const [allCategories, setAllCategories] = useState<Category[]>([])
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([])
