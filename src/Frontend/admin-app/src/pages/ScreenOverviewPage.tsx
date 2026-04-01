@@ -380,7 +380,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
         </span>
 
         <Link
-          to={`/tiles/${t.id}`}
+          to={`/tiles/${t.id}?returnTo=/`}
           className="btn btn--small"
           style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4, textDecoration: 'none' }}
           title="Bearbeiten"
@@ -391,7 +391,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
 
         {t.contentType === 'Folder' && (
           <Link
-            to={`/tiles/new?parentTileId=${t.id}`}
+            to={`/tiles/new?parentTileId=${t.id}&returnTo=/`}
             className="btn btn--small btn--primary"
             style={{ marginLeft: 4, padding: '1px 8px', fontSize: '0.8rem', lineHeight: 1.4, textDecoration: 'none' }}
             title="Neuen Inhalt in diesem Ordner erstellen"
@@ -566,7 +566,7 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
           <div className="tree-toolbar">
             <button className="btn btn--small" onClick={expandAll}>Alle aufklappen</button>
             <button className="btn btn--small" onClick={() => setExpanded(new Set())}>Alle einklappen</button>
-            <Link to="/tiles/new" className="btn btn--small btn--primary" style={{ textDecoration: 'none' }}>+ Neuer Inhalt</Link>
+            <Link to="/tiles/new?returnTo=/" className="btn btn--small btn--primary" style={{ textDecoration: 'none' }}>+ Neuer Inhalt</Link>
             <button className="btn btn--small" onClick={() => { setShowRootPicker(p => !p); if (!showRootPicker) setShowRootSort(false) }} style={{ marginLeft: 'auto' }}>
               {showRootPicker ? '− Picker schliessen' : '+ Inhalte zuweisen'}
             </button>

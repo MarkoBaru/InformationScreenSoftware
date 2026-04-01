@@ -11,6 +11,7 @@ export default function TileEditPage() {
   const [searchParams] = useSearchParams()
   const isNew = !id
   const navigate = useNavigate()
+  const returnTo = searchParams.get('returnTo') || '/tiles'
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -87,7 +88,7 @@ export default function TileEditPage() {
         setNewsTo(t.newsTo ? t.newsTo.substring(0, 16) : '')
         setParentTileId(t.parentTileId ?? '')
         setCategoryId(t.categoryId ?? '')
-      }).catch(() => navigate('/tiles'))
+      }).catch(() => navigate(returnTo))
     }
   }, [id, isNew, navigate])
 
@@ -129,7 +130,7 @@ export default function TileEditPage() {
       } else {
         await tilesApi.update(Number(id), { ...data, isActive })
       }
-      navigate('/tiles')
+      navigate(returnTo)
     } catch (err) {
       alert('Fehler beim Speichern: ' + (err as Error).message)
     } finally {
@@ -571,7 +572,7 @@ export default function TileEditPage() {
           <button type="submit" className="btn btn--primary" disabled={saving}>
             {saving ? 'Speichern...' : 'Speichern'}
           </button>
-          <button type="button" className="btn" onClick={() => navigate('/tiles')}>
+          <button type="button" className="btn" onClick={() => navigate(returnTo)}>
             Abbrechen
           </button>
         </div>
