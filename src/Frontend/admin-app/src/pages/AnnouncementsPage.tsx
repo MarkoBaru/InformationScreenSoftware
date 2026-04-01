@@ -103,6 +103,9 @@ export default function AnnouncementsPage() {
     )
   }
 
+  const fmtDate = (iso: string) =>
+    new Date(iso).toLocaleString('de-CH', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
   const isScheduleActive = (a: Announcement) => {
     if (!a.isActive) return false
     const now = new Date()
@@ -230,8 +233,8 @@ export default function AnnouncementsPage() {
                 </td>
                 <td style={{ fontWeight: 600 }}>{a.title}</td>
                 <td className="text-truncate">{a.message}</td>
-                <td>{a.activeFrom ? new Date(a.activeFrom).toLocaleString('de-CH') : '—'}</td>
-                <td>{a.activeTo ? new Date(a.activeTo).toLocaleString('de-CH') : '—'}</td>
+                <td>{a.activeFrom ? fmtDate(a.activeFrom) : '—'}</td>
+                <td>{a.activeTo ? fmtDate(a.activeTo) : '—'}</td>
                 <td>
                   {a.excludedScreenIds.length > 0
                     ? a.excludedScreenIds.map(id => allScreens.find(s => s.id === id)?.name || `#${id}`).join(', ')
