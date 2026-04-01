@@ -117,6 +117,11 @@ export default function HomeScreen() {
     setFolderStack(prev => prev.slice(0, -1))
   }
 
+  const handleHome = () => {
+    setViewingTile(null)
+    setFolderStack([])
+  }
+
   // Current folder context
   const currentFolderId = folderStack.length > 0 ? folderStack[folderStack.length - 1].id : null
 
@@ -168,6 +173,7 @@ export default function HomeScreen() {
           articleBody={viewingTile.articleBody}
           title={viewingTile.title}
           onBack={handleBack}
+          onHome={handleHome}
         />
       ) : (
         <>
@@ -245,12 +251,20 @@ export default function HomeScreen() {
           </div>
 
           {folderStack.length > 0 && (
-            <button className="content-viewer__back" onClick={handleFolderBack} type="button">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Zurück
-            </button>
+            <div className="content-viewer__nav-group">
+              <button className="content-viewer__home" onClick={handleHome} type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10" />
+                </svg>
+                Home
+              </button>
+              <button className="content-viewer__back" onClick={handleFolderBack} type="button">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Zurück
+              </button>
+            </div>
           )}
         </>
       )}

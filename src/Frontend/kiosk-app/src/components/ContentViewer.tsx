@@ -47,9 +47,10 @@ interface ContentViewerProps {
   articleBody?: string | null
   title?: string
   onBack: () => void
+  onHome?: () => void
 }
 
-export default function ContentViewer({ url, contentType, articleBody, title, onBack }: ContentViewerProps) {
+export default function ContentViewer({ url, contentType, articleBody, title, onBack, onHome }: ContentViewerProps) {
   const renderContent = () => {
     switch (contentType) {
       case 'FullscreenImage':
@@ -150,12 +151,22 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
   return (
     <div className="content-viewer">
       {renderContent()}
-      <button className="content-viewer__back" onClick={onBack} type="button">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
-        Zurück zur Übersicht
-      </button>
+      <div className="content-viewer__nav-group">
+        {onHome && (
+          <button className="content-viewer__home" onClick={onHome} type="button">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10" />
+            </svg>
+            Home
+          </button>
+        )}
+        <button className="content-viewer__back" onClick={onBack} type="button">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Zurück zur Übersicht
+        </button>
+      </div>
     </div>
   )
 }
