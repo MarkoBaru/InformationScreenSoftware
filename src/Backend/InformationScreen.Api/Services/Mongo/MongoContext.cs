@@ -197,3 +197,18 @@ public class MongoSetting
     public string Key { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
 }
+
+public class MongoAnnouncement
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public DateTime? ActiveFrom { get; set; }
+    public DateTime? ActiveTo { get; set; }
+    public List<int> ExcludedScreenIds { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}

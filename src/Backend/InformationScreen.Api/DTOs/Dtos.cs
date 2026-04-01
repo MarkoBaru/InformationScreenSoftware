@@ -194,3 +194,33 @@ public record UpdateUserRequest(
     bool IsActive,
     string? Password
 );
+
+// === Announcement DTOs ===
+
+public record AnnouncementDto(
+    int Id,
+    string Title,
+    string Message,
+    bool IsActive,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    List<int> ExcludedScreenIds,
+    DateTime CreatedAt
+);
+
+public record CreateAnnouncementRequest(
+    string Title,
+    string Message,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    List<int>? ExcludedScreenIds
+);
+
+public record UpdateAnnouncementRequest(
+    string Title,
+    string Message,
+    bool IsActive,
+    DateTime? ActiveFrom,
+    DateTime? ActiveTo,
+    List<int>? ExcludedScreenIds
+);

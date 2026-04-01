@@ -11,6 +11,7 @@ import MediaPage from './pages/MediaPage'
 import CategoriesPage from './pages/CategoriesPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
+import AnnouncementsPage from './pages/AnnouncementsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -37,6 +38,7 @@ function App() {
         <Route path="/tiles/:id" element={<TileEditPage />} />
         <Route path="/media" element={<MediaPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/announcements" element={<AnnouncementsPage />} />
         {user?.role === 'Admin' && (
           <Route path="/users" element={<UsersPage />} />
         )}

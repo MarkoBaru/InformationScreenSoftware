@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { TileData } from '../api'
+import { TileData, AnnouncementData, fetchAnnouncements } from '../api'
 import { useScreenData } from '../hooks/useScreenData'
 import { useIdleTimer } from '../hooks/useIdleTimer'
 import TileGrid from '../components/TileGrid'
@@ -15,6 +15,19 @@ export default function HomeScreen() {
   const [viewingTile, setViewingTile] = useState<TileData | null>(null)
   const [showIdle, setShowIdle] = useState(false)
   const [folderStack, setFolderStack] = useState<TileData[]>([])
+  const [announcements, setAnnouncements] = useState<AnnouncementData[]>([])
+
+  // Poll announcements when screen data is available
+  useEffect(() => {
+    if (!screen) return
+    let cancelled = false
+    const load = () => {
+      fetchAnnouncements(screen.id).then(data => { if (!cancelled) setAnnouncements(data) }).catch(() => {})
+    }
+    load()
+    const interval = setInterval(load, 30_000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [screen?.id])
 
   // Filter helper: check if a tile is currently within its scheduled activation window
   const isTileScheduledActive = useCallback((tile: TileData) => {
@@ -136,6 +149,18 @@ export default function HomeScreen() {
 
   return (
     <div className="home-screen">
+      {announcements.length > 0 && !viewingTile && !showIdle && (
+        <div className="announcement-banner">
+          <div className="announcement-banner__inner">
+            {announcements.map(a => (
+              <span key={a.id} className="announcement-banner__item">
+                <strong>{a.title}</strong>{a.message ? ` — ${a.message}` : ''}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {showIdle && screen.defaultContentType !== 'None' && (
         <IdleOverlay screen={screen} onInteraction={handleWakeUp} />
       )}

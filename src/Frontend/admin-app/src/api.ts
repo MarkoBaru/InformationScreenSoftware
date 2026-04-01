@@ -174,3 +174,22 @@ export const settingsApi = {
   update: (settings: Record<string, string>) =>
     request<Record<string, string>>('/api/settings', { method: 'PUT', body: JSON.stringify(settings) }),
 }
+
+// Announcement types
+export interface Announcement {
+  id: number; title: string; message: string; isActive: boolean;
+  activeFrom: string | null; activeTo: string | null;
+  excludedScreenIds: number[];
+  createdAt: string;
+}
+
+// Announcement API
+export const announcementsApi = {
+  list: () => request<Announcement[]>(`${API}/announcements`),
+  get: (id: number) => request<Announcement>(`${API}/announcements/${id}`),
+  create: (data: { title: string; message: string; activeFrom?: string; activeTo?: string; excludedScreenIds?: number[] }) =>
+    request<Announcement>(`${API}/announcements`, { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: { title: string; message: string; isActive: boolean; activeFrom?: string; activeTo?: string; excludedScreenIds?: number[] }) =>
+    request<Announcement>(`${API}/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => request<void>(`${API}/announcements/${id}`, { method: 'DELETE' }),
+}

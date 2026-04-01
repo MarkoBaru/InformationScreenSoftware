@@ -59,3 +59,29 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Announcement Banner */
+.announcement-banner {
+  background: #ff9800;
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.announcement-banner__inner {
+  display: inline-flex;
+  gap: 4rem;
+  animation: announcement-scroll 20s linear infinite;
+  padding: 10px 0;
+  font-size: 1.2rem;
+}
+
+.announcement-banner__item strong {
+  margin-right: 0.3em;
+}
+
+@keyframes announcement-scroll {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}

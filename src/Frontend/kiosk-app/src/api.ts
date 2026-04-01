@@ -29,10 +29,24 @@ export interface TileData {
 
 const API_BASE = '/api'
 
+export interface AnnouncementData {
+  id: number
+  title: string
+  message: string
+}
+
 export async function fetchScreen(slug: string): Promise<ScreenData> {
   const res = await fetch(`${API_BASE}/screens/${encodeURIComponent(slug)}`, {
     credentials: 'include'
   })
   if (!res.ok) throw new Error(`Screen "${slug}" not found`)
+  return res.json()
+}
+
+export async function fetchAnnouncements(screenId: number): Promise<AnnouncementData[]> {
+  const res = await fetch(`${API_BASE}/announcements/screen/${screenId}`, {
+    credentials: 'include'
+  })
+  if (!res.ok) return []
   return res.json()
 }

@@ -47,6 +47,7 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddScoped<ICategoryService, MongoCategoryService>();
     builder.Services.AddScoped<IAuthService, MongoAuthService>();
     builder.Services.AddScoped<ISettingsService, MongoSettingsService>();
+    builder.Services.AddScoped<IAnnouncementService, MongoAnnouncementService>();
 }
 else
 {
@@ -59,6 +60,9 @@ else
     builder.Services.AddScoped<ICategoryService, CategoryService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<ISettingsService, SettingsService>();
+    // Announcements: reuse Mongo service (no SQLite implementation needed)
+    builder.Services.AddSingleton(new MongoContext("mongodb://localhost:27017", "informationscreen"));
+    builder.Services.AddScoped<IAnnouncementService, MongoAnnouncementService>();
 }
 
 // JWT Authentication
