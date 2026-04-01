@@ -62,15 +62,17 @@ public class MongoAnnouncementService : IAnnouncementService
         return result.DeletedCount > 0;
     }
 
+    private static readonly TimeZoneInfo SwissTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
+
     public async Task<List<AnnouncementDto>> GetActiveForScreenAsync(int screenId)
     {
-        var now = DateTime.Now;
+        var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, SwissTz);
         var all = await Announcements.Find(a => a.IsActive).ToListAsync();
 
         return all
             .Where(a =>
-                (a.ActiveFrom == null || a.ActiveFrom <= now) &&
-                (a.ActiveTo == null || a.ActiveTo >= now) &&
+                (a.ActiveFrom == null || a.ActiveFrom.Value <= now) &&
+                (a.ActiveTo == null || a.ActiveTo.Value >= now) &&
                 !a.ExcludedScreenIds.Contains(screenId))
             .OrderByDescending(a => a.CreatedAt)
             .Select(Map)
