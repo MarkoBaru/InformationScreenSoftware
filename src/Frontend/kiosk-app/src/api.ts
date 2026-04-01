@@ -23,6 +23,8 @@ export interface TileData {
   isActive: boolean
   activeFrom: string | null
   activeTo: string | null
+  newsFrom: string | null
+  newsTo: string | null
   parentTileId: number | null
   categoryId: number | null
   categoryName: string | null
@@ -46,6 +48,14 @@ export async function fetchScreen(slug: string): Promise<ScreenData> {
 
 export async function fetchAnnouncements(screenId: number): Promise<AnnouncementData[]> {
   const res = await fetch(`${API_BASE}/announcements/screen/${screenId}`, {
+    credentials: 'include'
+  })
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function fetchNewsTiles(screenId: number): Promise<TileData[]> {
+  const res = await fetch(`${API_BASE}/tiles/news/screen/${screenId}`, {
     credentials: 'include'
   })
   if (!res.ok) return []

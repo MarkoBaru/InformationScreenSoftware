@@ -9,4 +9,5 @@ public interface ITileService
     Task<TileListDto> CreateAsync(CreateTileRequest request);
     Task<TileListDto?> UpdateAsync(int id, UpdateTileRequest request);
     Task<bool> DeleteAsync(int id);
+    Task<List<TileDto>> GetNewsTilesForScreenAsync(int screenId);
 }

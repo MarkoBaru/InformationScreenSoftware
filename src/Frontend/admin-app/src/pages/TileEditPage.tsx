@@ -22,6 +22,8 @@ export default function TileEditPage() {
   const [isActive, setIsActive] = useState(true)
   const [activeFrom, setActiveFrom] = useState('')
   const [activeTo, setActiveTo] = useState('')
+  const [newsFrom, setNewsFrom] = useState('')
+  const [newsTo, setNewsTo] = useState('')
   const [parentTileId, setParentTileId] = useState<number | ''>('')
   const [categoryId, setCategoryId] = useState<number | ''>('')
   const [allCategories, setAllCategories] = useState<Category[]>([])
@@ -77,6 +79,8 @@ export default function TileEditPage() {
         setIsActive(t.isActive)
         setActiveFrom(t.activeFrom ? t.activeFrom.substring(0, 16) : '')
         setActiveTo(t.activeTo ? t.activeTo.substring(0, 16) : '')
+        setNewsFrom(t.newsFrom ? t.newsFrom.substring(0, 16) : '')
+        setNewsTo(t.newsTo ? t.newsTo.substring(0, 16) : '')
         setParentTileId(t.parentTileId ?? '')
         setCategoryId(t.categoryId ?? '')
       }).catch(() => navigate('/tiles'))
@@ -111,6 +115,8 @@ export default function TileEditPage() {
         sortOrder, categoryId: categoryId === '' ? undefined : categoryId,
         activeFrom: activeFrom ? new Date(activeFrom).toISOString() : undefined,
         activeTo: activeTo ? new Date(activeTo).toISOString() : undefined,
+        newsFrom: newsFrom ? new Date(newsFrom).toISOString() : undefined,
+        newsTo: newsTo ? new Date(newsTo).toISOString() : undefined,
         parentTileId: parentTileId === '' ? undefined : parentTileId,
       }
 
@@ -513,6 +519,34 @@ export default function TileEditPage() {
           </div>
           <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
             Leer lassen = immer aktiv (sofern Aktiv-Toggle an ist). Wird nur einer der Werte gesetzt, gilt dieser als einzige Grenze.
+          </p>
+        </div>
+
+        <div className="form-group">
+          <label>Im Bereich «Neue Inhalte» anzeigen</label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="datetime-local"
+              value={newsFrom}
+              onChange={(e) => setNewsFrom(e.target.value)}
+              style={{ flex: 1, minWidth: 180 }}
+            />
+            <span>bis</span>
+            <input
+              type="datetime-local"
+              value={newsTo}
+              onChange={(e) => setNewsTo(e.target.value)}
+              style={{ flex: 1, minWidth: 180 }}
+            />
+            {(newsFrom || newsTo) && (
+              <button type="button" className="btn btn--small" onClick={() => { setNewsFrom(''); setNewsTo('') }}>
+                Zurücksetzen
+              </button>
+            )}
+          </div>
+          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
+            Wenn ein Zeitraum gesetzt ist, erscheint dieser Inhalt auf dem Kiosk-Screen im Bereich «Neue Inhalte» auf der rechten Seite.
+            Vor und nach dem angegebenen Zeitraum wird der Eintrag dort nicht angezeigt. Leer lassen = nicht im News-Bereich anzeigen.
           </p>
         </div>
 

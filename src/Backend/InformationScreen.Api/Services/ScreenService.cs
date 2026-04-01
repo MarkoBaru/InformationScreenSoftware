@@ -41,6 +41,8 @@ public class ScreenService : IScreenService
                 st.Tile.IsActive,
                 st.Tile.ActiveFrom,
                 st.Tile.ActiveTo,
+                st.Tile.NewsFrom,
+                st.Tile.NewsTo,
                 st.Tile.ParentTileId,
                 st.Tile.CategoryId,
                 st.Tile.Category?.Name
@@ -86,6 +88,8 @@ public class ScreenService : IScreenService
                 st.Tile.IsActive,
                 st.Tile.ActiveFrom,
                 st.Tile.ActiveTo,
+                st.Tile.NewsFrom,
+                st.Tile.NewsTo,
                 st.Tile.ParentTileId,
                 st.Tile.CategoryId, st.Tile.Category?.Name
             ))

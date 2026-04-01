@@ -60,6 +60,8 @@ public record TileDto(
     bool IsActive,
     DateTime? ActiveFrom,
     DateTime? ActiveTo,
+    DateTime? NewsFrom,
+    DateTime? NewsTo,
     int? ParentTileId,
     int? CategoryId,
     string? CategoryName
@@ -78,6 +80,8 @@ public record TileListDto(
     bool IsActive,
     DateTime? ActiveFrom,
     DateTime? ActiveTo,
+    DateTime? NewsFrom,
+    DateTime? NewsTo,
     int? ParentTileId,
     int? CategoryId,
     string? CategoryName,
@@ -95,6 +99,8 @@ public record CreateTileRequest(
     int SortOrder,
     DateTime? ActiveFrom,
     DateTime? ActiveTo,
+    DateTime? NewsFrom,
+    DateTime? NewsTo,
     int? ParentTileId,
     int? CategoryId,
     List<int>? ScreenIds
@@ -112,6 +118,8 @@ public record UpdateTileRequest(
     bool IsActive,
     DateTime? ActiveFrom,
     DateTime? ActiveTo,
+    DateTime? NewsFrom,
+    DateTime? NewsTo,
     int? ParentTileId,
     int? CategoryId,
     List<int>? ScreenIds

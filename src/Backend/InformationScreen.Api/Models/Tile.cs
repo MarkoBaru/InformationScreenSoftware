@@ -33,6 +33,8 @@ public class Tile
     public bool IsActive { get; set; } = true;
     public DateTime? ActiveFrom { get; set; }
     public DateTime? ActiveTo { get; set; }
+    public DateTime? NewsFrom { get; set; }
+    public DateTime? NewsTo { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

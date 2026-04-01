@@ -28,7 +28,7 @@ public class TileService : ITileService
             t.Id, t.Title, t.Description,
             t.ImageUrl, t.ContentType, t.LinkUrl, t.LinkTarget, t.ArticleBody,
             t.SortOrder, t.IsActive,
-            t.ActiveFrom, t.ActiveTo, t.ParentTileId,
+            t.ActiveFrom, t.ActiveTo, t.NewsFrom, t.NewsTo, t.ParentTileId,
             t.CategoryId, t.Category?.Name,
             t.ScreenTiles.Select(st => st.Screen.Name).ToList()
         )).ToList();
@@ -48,7 +48,7 @@ public class TileService : ITileService
             tile.Id, tile.Title, tile.Description,
             tile.ImageUrl, tile.ContentType, tile.LinkUrl, tile.LinkTarget, tile.ArticleBody,
             tile.SortOrder, tile.IsActive,
-            tile.ActiveFrom, tile.ActiveTo, tile.ParentTileId,
+            tile.ActiveFrom, tile.ActiveTo, tile.NewsFrom, tile.NewsTo, tile.ParentTileId,
             tile.CategoryId, tile.Category?.Name,
             tile.ScreenTiles.Select(st => st.Screen.Name).ToList()
         );
@@ -68,6 +68,8 @@ public class TileService : ITileService
             SortOrder = request.SortOrder,
             ActiveFrom = request.ActiveFrom,
             ActiveTo = request.ActiveTo,
+            NewsFrom = request.NewsFrom,
+            NewsTo = request.NewsTo,
             ParentTileId = request.ParentTileId,
             CategoryId = request.CategoryId
         };
@@ -107,6 +109,8 @@ public class TileService : ITileService
         tile.IsActive = request.IsActive;
         tile.ActiveFrom = request.ActiveFrom;
         tile.ActiveTo = request.ActiveTo;
+        tile.NewsFrom = request.NewsFrom;
+        tile.NewsTo = request.NewsTo;
         tile.ParentTileId = request.ParentTileId;
         tile.CategoryId = request.CategoryId;
         tile.UpdatedAt = DateTime.UtcNow;
@@ -136,5 +140,10 @@ public class TileService : ITileService
         _db.Tiles.Remove(tile);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public Task<List<TileDto>> GetNewsTilesForScreenAsync(int screenId)
+    {
+        throw new NotImplementedException("EF Core implementation not used");
     }
 }

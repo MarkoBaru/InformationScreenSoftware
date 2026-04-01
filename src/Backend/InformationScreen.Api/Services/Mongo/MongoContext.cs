@@ -155,6 +155,8 @@ public class MongoTile
     public bool IsActive { get; set; } = true;
     public DateTime? ActiveFrom { get; set; }
     public DateTime? ActiveTo { get; set; }
+    public DateTime? NewsFrom { get; set; }
+    public DateTime? NewsTo { get; set; }
     public int? ParentTileId { get; set; }
     public int? CategoryId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

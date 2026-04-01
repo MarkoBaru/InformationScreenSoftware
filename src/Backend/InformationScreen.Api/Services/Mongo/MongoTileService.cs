@@ -47,6 +47,8 @@ public class MongoTileService : ITileService
             SortOrder = request.SortOrder,
             ActiveFrom = request.ActiveFrom,
             ActiveTo = request.ActiveTo,
+            NewsFrom = request.NewsFrom,
+            NewsTo = request.NewsTo,
             ParentTileId = request.ParentTileId,
             CategoryId = request.CategoryId
         };
@@ -91,6 +93,8 @@ public class MongoTileService : ITileService
             .Set(t => t.IsActive, request.IsActive)
             .Set(t => t.ActiveFrom, request.ActiveFrom)
             .Set(t => t.ActiveTo, request.ActiveTo)
+            .Set(t => t.NewsFrom, request.NewsFrom)
+            .Set(t => t.NewsTo, request.NewsTo)
             .Set(t => t.ParentTileId, request.ParentTileId)
             .Set(t => t.CategoryId, request.CategoryId)
             .Set(t => t.UpdatedAt, DateTime.UtcNow);
@@ -131,6 +135,57 @@ public class MongoTileService : ITileService
         return true;
     }
 
+    public async Task<List<TileDto>> GetNewsTilesForScreenAsync(int screenId)
+    {
+        var swissTz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich");
+        var swissNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, swissTz);
+
+        var screen = await Screens.Find(s => s.Id == screenId).FirstOrDefaultAsync();
+        if (screen == null) return new List<TileDto>();
+
+        var tileIds = screen.Tiles.Select(t => t.TileId).ToList();
+        if (tileIds.Count == 0) return new List<TileDto>();
+
+        var tiles = await Tiles.Find(
+            Builders<MongoTile>.Filter.In(t => t.Id, tileIds) &
+            Builders<MongoTile>.Filter.Eq(t => t.IsActive, true)
+        ).ToListAsync();
+
+        var categoryIds = tiles.Where(t => t.CategoryId.HasValue)
+            .Select(t => t.CategoryId!.Value).Distinct().ToList();
+        var categories = categoryIds.Count > 0
+            ? (await Categories.Find(Builders<MongoCategory>.Filter.In(c => c.Id, categoryIds)).ToListAsync())
+                .ToDictionary(c => c.Id)
+            : new Dictionary<int, MongoCategory>();
+
+        var sortMap = screen.Tiles.ToDictionary(st => st.TileId, st => st.SortOrderOverride);
+
+        return tiles
+            .Where(t => t.NewsFrom.HasValue && t.NewsTo.HasValue &&
+                        swissNow >= t.NewsFrom.Value && swissNow <= t.NewsTo.Value)
+            .Select(t =>
+            {
+                var catName = t.CategoryId.HasValue && categories.TryGetValue(t.CategoryId.Value, out var cat)
+                    ? cat.Name : null;
+                sortMap.TryGetValue(t.Id, out var sortOverride);
+                return new TileDto(
+                    t.Id, t.Title, t.Description, t.ImageUrl,
+                    Enum.Parse<ContentType>(t.ContentType),
+                    t.LinkUrl,
+                    Enum.Parse<LinkTarget>(t.LinkTarget),
+                    t.ArticleBody,
+                    sortOverride ?? t.SortOrder,
+                    t.IsActive,
+                    t.ActiveFrom, t.ActiveTo,
+                    t.NewsFrom, t.NewsTo,
+                    t.ParentTileId,
+                    t.CategoryId, catName
+                );
+            })
+            .OrderBy(t => t.SortOrder)
+            .ToList();
+    }
+
     private async Task<List<TileListDto>> MapToListDtos(List<MongoTile> tiles)
     {
         if (tiles.Count == 0) return new List<TileListDto>();
@@ -168,7 +223,7 @@ public class MongoTileService : ITileService
                 t.LinkUrl,
                 Enum.Parse<LinkTarget>(t.LinkTarget),
                 t.ArticleBody, t.SortOrder, t.IsActive,
-                t.ActiveFrom, t.ActiveTo, t.ParentTileId,
+                t.ActiveFrom, t.ActiveTo, t.NewsFrom, t.NewsTo, t.ParentTileId,
                 t.CategoryId, catName,
                 screenNames ?? new List<string>()
             );

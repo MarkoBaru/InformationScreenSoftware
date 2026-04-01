@@ -157,6 +157,8 @@ public class MongoScreenService : IScreenService
                     t.IsActive,
                     t.ActiveFrom,
                     t.ActiveTo,
+                    t.NewsFrom,
+                    t.NewsTo,
                     t.ParentTileId,
                     t.CategoryId, catName
                 );

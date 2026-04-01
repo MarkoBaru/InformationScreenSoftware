@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { TileData, AnnouncementData, fetchAnnouncements } from '../api'
+import { TileData, AnnouncementData, fetchAnnouncements, fetchNewsTiles } from '../api'
 import { useScreenData } from '../hooks/useScreenData'
 import { useIdleTimer } from '../hooks/useIdleTimer'
 import TileGrid from '../components/TileGrid'
@@ -25,6 +25,7 @@ export default function HomeScreen() {
   const [showIdle, setShowIdle] = useState(false)
   const [folderStack, setFolderStack] = useState<TileData[]>([])
   const [announcements, setAnnouncements] = useState<AnnouncementData[]>([])
+  const [newsTiles, setNewsTiles] = useState<TileData[]>([])
   const now = useClock()
 
   // Poll announcements when screen data is available
@@ -33,6 +34,18 @@ export default function HomeScreen() {
     let cancelled = false
     const load = () => {
       fetchAnnouncements(screen.id).then(data => { if (!cancelled) setAnnouncements(data) }).catch(() => {})
+    }
+    load()
+    const interval = setInterval(load, 30_000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [screen?.id])
+
+  // Poll news tiles when screen data is available
+  useEffect(() => {
+    if (!screen) return
+    let cancelled = false
+    const load = () => {
+      fetchNewsTiles(screen.id).then(data => { if (!cancelled) setNewsTiles(data) }).catch(() => {})
     }
     load()
     const interval = setInterval(load, 30_000)
@@ -200,9 +213,35 @@ export default function HomeScreen() {
             </div>
           )}
 
-          {/* Tile grid (flat, no category grouping) */}
-          <div className="home-screen__tiles">
-            <TileGrid tiles={filteredTiles} onTileClick={handleTileClick} />
+          {/* Main content area with optional news sidebar */}
+          <div className={`home-screen__body ${newsTiles.length > 0 ? 'home-screen__body--with-news' : ''}`}>
+            {/* Tile grid (flat, no category grouping) */}
+            <div className="home-screen__tiles">
+              <TileGrid tiles={filteredTiles} onTileClick={handleTileClick} />
+            </div>
+
+            {/* Neue Inhalte sidebar */}
+            {newsTiles.length > 0 && (
+              <aside className="home-screen__news">
+                <h2 className="home-screen__news-title">Neue Inhalte</h2>
+                <hr className="home-screen__news-divider" />
+                <div className="home-screen__news-list">
+                  {newsTiles.map(tile => (
+                    <button
+                      key={tile.id}
+                      className="news-card"
+                      onClick={() => handleTileClick(tile)}
+                      type="button"
+                    >
+                      {tile.imageUrl && (
+                        <img src={tile.imageUrl} alt={tile.title} className="news-card__img" />
+                      )}
+                      <span className="news-card__title">{tile.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </aside>
+            )}
           </div>
 
           {folderStack.length > 0 && (
