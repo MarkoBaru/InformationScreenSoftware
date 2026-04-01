@@ -121,7 +121,7 @@ export default function AnnouncementsPage() {
       </div>
 
       {showForm && (
-        <div className="card" style={{ marginBottom: 24 }}>
+        <div className="form-card" style={{ marginBottom: 24, maxWidth: 'none' }}>
           <h3 style={{ marginTop: 0 }}>{isNew ? 'Neue Nachricht erstellen' : 'Nachricht bearbeiten'}</h3>
 
           <div className="form-group">
@@ -136,11 +136,10 @@ export default function AnnouncementsPage() {
               onChange={e => setMessage(e.target.value)}
               placeholder="z.B. Am 05.04. finden Wartungsarbeiten statt..."
               rows={3}
-              style={{ width: '100%', resize: 'vertical' }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div className="form-row">
             <div className="form-group" style={{ flex: 1, minWidth: 200 }}>
               <label>Aktiv von</label>
               <input type="datetime-local" value={activeFrom} onChange={e => setActiveFrom(e.target.value)} />
@@ -153,32 +152,33 @@ export default function AnnouncementsPage() {
 
           {!isNew && (
             <div className="form-group">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} style={{ width: 'auto' }} />
-                Aktiv
-              </label>
+              <div className="checkbox-group">
+                <label>
+                  <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+                  Aktiv
+                </label>
+              </div>
             </div>
           )}
 
           <div className="form-group">
             <label>Nicht anzeigen auf diesen Screens:</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+            <div className="checkbox-group" style={{ marginTop: 4 }}>
               {allScreens.map(s => (
-                <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', cursor: 'pointer', padding: '4px 8px', borderRadius: 4, background: excludedScreenIds.includes(s.id) ? '#ffebee' : '#f5f5f5', border: '1px solid ' + (excludedScreenIds.includes(s.id) ? '#ef9a9a' : '#e0e0e0') }}>
+                <label key={s.id} className={`screen-chip ${excludedScreenIds.includes(s.id) ? 'screen-chip--excluded' : ''}`}>
                   <input
                     type="checkbox"
                     checked={excludedScreenIds.includes(s.id)}
                     onChange={() => toggleExcluded(s.id)}
-                    style={{ width: 'auto' }}
                   />
                   {s.name}
                 </label>
               ))}
-              {allScreens.length === 0 && <span style={{ color: '#999', fontSize: '0.85rem' }}>Keine Screens vorhanden</span>}
+              {allScreens.length === 0 && <span className="hint">Keine Screens vorhanden</span>}
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div className="form-actions">
             <button className="btn btn--primary" onClick={handleSave} disabled={saving || !title.trim() || !message.trim()}>
               {saving ? 'Speichern...' : 'Speichern'}
             </button>
@@ -187,7 +187,7 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      <div className="page__toolbar" style={{ marginBottom: 12 }}>
+      <div className="page__toolbar">
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">Alle ({items.length})</option>
           <option value="active">Aktiv ({items.filter(a => a.isActive).length})</option>
@@ -196,9 +196,9 @@ export default function AnnouncementsPage() {
       </div>
 
       {loadError && (
-        <div style={{ background: '#fee', color: '#c00', padding: '12px 16px', borderRadius: 8, marginBottom: 12 }}>
+        <div className="error-banner">
           {loadError}
-          <button className="btn" style={{ marginLeft: 12 }} onClick={load}>Erneut laden</button>
+          <button className="btn btn--small" onClick={load}>Erneut laden</button>
         </div>
       )}
 
@@ -208,47 +208,45 @@ export default function AnnouncementsPage() {
           {!showForm && <button className="btn btn--primary" onClick={openNew}>Erste Nachricht erstellen</button>}
         </div>
       ) : (
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Status</th>
-                <th>Titel</th>
-                <th>Nachricht</th>
-                <th>Von</th>
-                <th>Bis</th>
-                <th>Ausgeschlossen</th>
-                <th style={{ width: 120 }}>Aktionen</th>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Titel</th>
+              <th>Nachricht</th>
+              <th>Von</th>
+              <th>Bis</th>
+              <th>Ausgeschlossen</th>
+              <th>Aktionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(a => (
+              <tr key={a.id}>
+                <td>
+                  <span className={`badge ${isScheduleActive(a) ? 'badge--success' : 'badge--muted'}`}>
+                    {isScheduleActive(a) ? 'Aktiv' : 'Inaktiv'}
+                  </span>
+                </td>
+                <td style={{ fontWeight: 600 }}>{a.title}</td>
+                <td className="text-truncate">{a.message}</td>
+                <td>{a.activeFrom ? new Date(a.activeFrom).toLocaleString('de-CH') : '—'}</td>
+                <td>{a.activeTo ? new Date(a.activeTo).toLocaleString('de-CH') : '—'}</td>
+                <td>
+                  {a.excludedScreenIds.length > 0
+                    ? a.excludedScreenIds.map(id => allScreens.find(s => s.id === id)?.name || `#${id}`).join(', ')
+                    : '—'}
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    <button className="btn btn--small" onClick={() => openEdit(a)}>Bearbeiten</button>
+                    <button className="btn btn--small btn--danger" onClick={() => handleDelete(a.id, a.title)}>Löschen</button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map(a => (
-                <tr key={a.id}>
-                  <td>
-                    <span className={`badge ${isScheduleActive(a) ? 'badge--success' : 'badge--muted'}`}>
-                      {isScheduleActive(a) ? 'Aktiv' : 'Inaktiv'}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{a.title}</td>
-                  <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.message}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{a.activeFrom ? new Date(a.activeFrom).toLocaleString('de-CH') : '—'}</td>
-                  <td style={{ fontSize: '0.85rem' }}>{a.activeTo ? new Date(a.activeTo).toLocaleString('de-CH') : '—'}</td>
-                  <td style={{ fontSize: '0.85rem' }}>
-                    {a.excludedScreenIds.length > 0
-                      ? a.excludedScreenIds.map(id => allScreens.find(s => s.id === id)?.name || `#${id}`).join(', ')
-                      : '—'}
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="btn btn--small" onClick={() => openEdit(a)}>✏️</button>
-                      <button className="btn btn--small btn--danger" onClick={() => handleDelete(a.id, a.title)}>🗑️</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   )
