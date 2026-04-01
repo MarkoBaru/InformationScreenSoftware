@@ -13,10 +13,8 @@ public class MongoAnnouncementService : IAnnouncementService
 
     public async Task<List<AnnouncementDto>> GetAllAsync()
     {
-        var all = await Announcements.Find(_ => true)
-            .SortByDescending(a => a.CreatedAt)
-            .ToListAsync();
-        return all.Select(Map).ToList();
+        var all = await Announcements.Find(_ => true).ToListAsync();
+        return all.OrderByDescending(a => a.CreatedAt).Select(Map).ToList();
     }
 
     public async Task<AnnouncementDto?> GetByIdAsync(int id)

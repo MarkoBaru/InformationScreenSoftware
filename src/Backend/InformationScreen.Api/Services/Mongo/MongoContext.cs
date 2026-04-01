@@ -107,6 +107,11 @@ public class MongoContext
         users.Indexes.CreateOne(new CreateIndexModel<MongoUser>(
             Builders<MongoUser>.IndexKeys.Ascending(u => u.Username),
             new CreateIndexOptions { Unique = true }));
+
+        // Index on announcements createdAt descending
+        var announcements = _database.GetCollection<MongoAnnouncement>("announcements");
+        announcements.Indexes.CreateOne(new CreateIndexModel<MongoAnnouncement>(
+            Builders<MongoAnnouncement>.IndexKeys.Descending(a => a.CreatedAt)));
     }
 }
 
