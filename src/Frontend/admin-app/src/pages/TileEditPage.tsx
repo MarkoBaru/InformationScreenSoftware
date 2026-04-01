@@ -12,6 +12,7 @@ export default function TileEditPage() {
   const isNew = !id
   const navigate = useNavigate()
   const returnTo = searchParams.get('returnTo') || '/tiles'
+  const initialScreenId = searchParams.get('screenId')
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -126,7 +127,10 @@ export default function TileEditPage() {
       }
 
       if (isNew) {
-        await tilesApi.create(data)
+        const createData = initialScreenId
+          ? { ...data, screenIds: [Number(initialScreenId)] }
+          : data
+        await tilesApi.create(createData)
       } else {
         await tilesApi.update(Number(id), { ...data, isActive })
       }
