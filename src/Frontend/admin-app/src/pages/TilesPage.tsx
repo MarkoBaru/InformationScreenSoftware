@@ -152,19 +152,19 @@ export default function TilesPage() {
         </select>
       </div>
 
-      <div className="filter-bar" style={{ paddingTop: 0 }}>
-        <label style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
-          Aktiv von:
-          <input type="date" value={filterFromStart} onChange={e => setFilterFromStart(e.target.value)} style={{ fontSize: '0.8rem' }} />
-          –
-          <input type="date" value={filterFromEnd} onChange={e => setFilterFromEnd(e.target.value)} style={{ fontSize: '0.8rem' }} />
-        </label>
-        <label style={{ fontSize: '0.8rem', color: '#666', display: 'flex', alignItems: 'center', gap: 4 }}>
-          Aktiv bis:
-          <input type="date" value={filterToStart} onChange={e => setFilterToStart(e.target.value)} style={{ fontSize: '0.8rem' }} />
-          –
-          <input type="date" value={filterToEnd} onChange={e => setFilterToEnd(e.target.value)} style={{ fontSize: '0.8rem' }} />
-        </label>
+      <div className="filter-bar" style={{ paddingTop: 0, alignItems: 'center' }}>
+        <div className="filter-bar__date-group">
+          <span>Aktiv von:</span>
+          <input type="date" value={filterFromStart} onChange={e => setFilterFromStart(e.target.value)} />
+          <span>–</span>
+          <input type="date" value={filterFromEnd} onChange={e => setFilterFromEnd(e.target.value)} />
+        </div>
+        <div className="filter-bar__date-group">
+          <span>Aktiv bis:</span>
+          <input type="date" value={filterToStart} onChange={e => setFilterToStart(e.target.value)} />
+          <span>–</span>
+          <input type="date" value={filterToEnd} onChange={e => setFilterToEnd(e.target.value)} />
+        </div>
         {(filterFromStart || filterFromEnd || filterToStart || filterToEnd) && (
           <button className="btn btn--small" onClick={() => { setFilterFromStart(''); setFilterFromEnd(''); setFilterToStart(''); setFilterToEnd('') }}>
             Datum zurücksetzen

@@ -31,10 +31,21 @@ export default function AnnouncementsPage() {
 
   useEffect(load, [])
 
+  const isScheduleActive = (a: Announcement) => {
+    if (!a.isActive) return false
+    const now = new Date()
+    // Dates from backend are UTC-labeled but represent local time —
+    // strip Z so JS parses them as local time for correct comparison
+    const asLocal = (s: string) => new Date(s.replace('Z', ''))
+    if (a.activeFrom && asLocal(a.activeFrom) > now) return false
+    if (a.activeTo && asLocal(a.activeTo) < now) return false
+    return true
+  }
+
   const filtered = useMemo(() => {
     let list = items
-    if (filterStatus === 'active') list = list.filter(a => a.isActive)
-    if (filterStatus === 'inactive') list = list.filter(a => !a.isActive)
+    if (filterStatus === 'active') list = list.filter(a => isScheduleActive(a))
+    if (filterStatus === 'inactive') list = list.filter(a => !isScheduleActive(a))
     return list
   }, [items, filterStatus])
 
@@ -105,14 +116,6 @@ export default function AnnouncementsPage() {
 
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleString('de-CH', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-
-  const isScheduleActive = (a: Announcement) => {
-    if (!a.isActive) return false
-    const now = new Date()
-    if (a.activeFrom && new Date(a.activeFrom) > now) return false
-    if (a.activeTo && new Date(a.activeTo) < now) return false
-    return true
-  }
 
   const showForm = isNew || editing !== null
 
@@ -193,8 +196,8 @@ export default function AnnouncementsPage() {
       <div className="page__toolbar">
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           <option value="">Alle ({items.length})</option>
-          <option value="active">Aktiv ({items.filter(a => a.isActive).length})</option>
-          <option value="inactive">Inaktiv ({items.filter(a => !a.isActive).length})</option>
+          <option value="active">Aktiv ({items.filter(a => isScheduleActive(a)).length})</option>
+          <option value="inactive">Inaktiv ({items.filter(a => !isScheduleActive(a)).length})</option>
         </select>
       </div>
 

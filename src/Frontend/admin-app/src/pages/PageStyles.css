@@ -147,7 +147,8 @@
   border-color: var(--primary);
 }
 
-.filter-bar select {
+.filter-bar select,
+.filter-bar input[type="date"] {
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -157,8 +158,22 @@
   cursor: pointer;
 }
 
-.filter-bar select:focus {
+.filter-bar select:focus,
+.filter-bar input[type="date"]:focus {
   border-color: var(--primary);
+}
+
+.filter-bar__date-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.filter-bar__date-group span {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* Media Picker Modal */
