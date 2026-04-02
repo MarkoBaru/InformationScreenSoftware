@@ -150,9 +150,6 @@ export default function TilesPage() {
           <option value="activeTo">Aktiv bis</option>
           <option value="hierarchy">Hierarchie</option>
         </select>
-      </div>
-
-      <div className="filter-bar" style={{ paddingTop: 0, alignItems: 'center' }}>
         <div className="filter-bar__date-group">
           <span>Aktiv von:</span>
           <input type="date" value={filterFromStart} onChange={e => setFilterFromStart(e.target.value)} />
