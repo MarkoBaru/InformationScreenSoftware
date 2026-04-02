@@ -168,6 +168,9 @@ public record MediaAssetDto(
     string Url,
     string MimeType,
     long FileSizeBytes,
+    string? Title,
+    string? Description,
+    string? Tags,
     DateTime UploadedAt
 );
 

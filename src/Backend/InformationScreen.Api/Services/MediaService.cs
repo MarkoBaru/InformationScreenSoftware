@@ -27,7 +27,7 @@ public class MediaService : IMediaService
         return assets.Select(m => new MediaAssetDto(
             m.Id, m.FileName,
             $"/api/media/{m.Id}",
-            m.MimeType, m.FileSizeBytes, m.UploadedAt
+            m.MimeType, m.FileSizeBytes, m.Title, m.Description, m.Tags, m.UploadedAt
         )).ToList();
     }
 
@@ -36,7 +36,7 @@ public class MediaService : IMediaService
         return await _db.MediaAssets.FindAsync(id);
     }
 
-    public async Task<MediaAssetDto> UploadAsync(IFormFile file)
+    public async Task<MediaAssetDto> UploadAsync(IFormFile file, string? title = null, string? description = null, string? tags = null)
     {
         var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
         var filePath = Path.Combine(_uploadPath, fileName);
@@ -51,7 +51,10 @@ public class MediaService : IMediaService
             FileName = file.FileName,
             FilePath = filePath,
             MimeType = file.ContentType,
-            FileSizeBytes = file.Length
+            FileSizeBytes = file.Length,
+            Title = title,
+            Description = description,
+            Tags = tags
         };
 
         _db.MediaAssets.Add(asset);
@@ -60,7 +63,7 @@ public class MediaService : IMediaService
         return new MediaAssetDto(
             asset.Id, asset.FileName,
             $"/api/media/{asset.Id}",
-            asset.MimeType, asset.FileSizeBytes, asset.UploadedAt
+            asset.MimeType, asset.FileSizeBytes, asset.Title, asset.Description, asset.Tags, asset.UploadedAt
         );
     }
 
@@ -93,5 +96,22 @@ public class MediaService : IMediaService
         _db.MediaAssets.Remove(asset);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<MediaAssetDto?> UpdateMetadataAsync(int id, string? title, string? description, string? tags)
+    {
+        var asset = await _db.MediaAssets.FindAsync(id);
+        if (asset == null) return null;
+
+        asset.Title = title;
+        asset.Description = description;
+        asset.Tags = tags;
+        await _db.SaveChangesAsync();
+
+        return new MediaAssetDto(
+            asset.Id, asset.FileName,
+            $"/api/media/{asset.Id}",
+            asset.MimeType, asset.FileSizeBytes, asset.Title, asset.Description, asset.Tags, asset.UploadedAt
+        );
     }
 }

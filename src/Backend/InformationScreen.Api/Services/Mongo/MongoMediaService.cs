@@ -36,7 +36,7 @@ public class MongoMediaService : IMediaService
 
         return assets.OrderByDescending(m => m.UploadedAt).Select(m => new MediaAssetDto(
             m.Id, m.FileName, $"/api/media/{m.Id}",
-            m.MimeType, m.FileSizeBytes, m.UploadedAt
+            m.MimeType, m.FileSizeBytes, m.Title, m.Description, m.Tags, m.UploadedAt
         )).ToList();
     }
 
@@ -56,7 +56,7 @@ public class MongoMediaService : IMediaService
         };
     }
 
-    public async Task<MediaAssetDto> UploadAsync(IFormFile file)
+    public async Task<MediaAssetDto> UploadAsync(IFormFile file, string? title = null, string? description = null, string? tags = null)
     {
         var id = await _ctx.GetNextIdAsync("mediaAssets");
         var storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
@@ -85,6 +85,9 @@ public class MongoMediaService : IMediaService
             FilePath = filePath,
             MimeType = file.ContentType,
             FileSizeBytes = file.Length,
+            Title = title,
+            Description = description,
+            Tags = tags,
             UploadedAt = DateTime.UtcNow
         };
 
@@ -92,7 +95,7 @@ public class MongoMediaService : IMediaService
 
         return new MediaAssetDto(
             asset.Id, asset.FileName, $"/api/media/{asset.Id}",
-            asset.MimeType, asset.FileSizeBytes, asset.UploadedAt
+            asset.MimeType, asset.FileSizeBytes, asset.Title, asset.Description, asset.Tags, asset.UploadedAt
         );
     }
 
@@ -137,5 +140,24 @@ public class MongoMediaService : IMediaService
 
         await MediaAssets.DeleteOneAsync(m => m.Id == id);
         return true;
+    }
+
+    public async Task<MediaAssetDto?> UpdateMetadataAsync(int id, string? title, string? description, string? tags)
+    {
+        var update = Builders<MongoMediaAsset>.Update
+            .Set(m => m.Title, title)
+            .Set(m => m.Description, description)
+            .Set(m => m.Tags, tags);
+
+        var result = await MediaAssets.FindOneAndUpdateAsync(
+            m => m.Id == id, update,
+            new FindOneAndUpdateOptions<MongoMediaAsset> { ReturnDocument = ReturnDocument.After });
+
+        if (result == null) return null;
+
+        return new MediaAssetDto(
+            result.Id, result.FileName, $"/api/media/{result.Id}",
+            result.MimeType, result.FileSizeBytes, result.Title, result.Description, result.Tags, result.UploadedAt
+        );
     }
 }

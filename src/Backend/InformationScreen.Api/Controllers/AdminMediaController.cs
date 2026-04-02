@@ -25,7 +25,7 @@ public class AdminMediaController : ControllerBase
     [HttpPost("upload")]
     [DisableRequestSizeLimit]
     [RequestFormLimits(MultipartBodyLengthLimit = 1024L * 1024 * 1024)]
-    public async Task<IActionResult> Upload(IFormFile file)
+    public async Task<IActionResult> Upload(IFormFile file, [FromForm] string? title = null, [FromForm] string? description = null, [FromForm] string? tags = null)
     {
         if (file == null || file.Length == 0)
             return BadRequest("No file provided.");
@@ -44,8 +44,16 @@ public class AdminMediaController : ControllerBase
         if (file.Length > maxSize)
             return BadRequest($"Die Datei ist zu gross ({file.Length / 1024 / 1024} MB). Maximal erlaubt: 1 GB.");
 
-        var asset = await _mediaService.UploadAsync(file);
+        var asset = await _mediaService.UploadAsync(file, title, description, tags);
         return Ok(asset);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateMetadata(int id, [FromBody] UpdateMediaMetadataRequest request)
+    {
+        var result = await _mediaService.UpdateMetadataAsync(id, request.Title, request.Description, request.Tags);
+        if (result == null) return NotFound();
+        return Ok(result);
     }
 
     [HttpDelete("{id:int}")]
@@ -55,3 +63,5 @@ public class AdminMediaController : ControllerBase
         return NoContent();
     }
 }
+
+public record UpdateMediaMetadataRequest(string? Title, string? Description, string? Tags);

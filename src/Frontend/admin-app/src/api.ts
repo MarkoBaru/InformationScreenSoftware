@@ -66,7 +66,9 @@ export interface Category {
 
 export interface MediaAsset {
   id: number; fileName: string; url: string;
-  mimeType: string; fileSizeBytes: number; uploadedAt: string;
+  mimeType: string; fileSizeBytes: number;
+  title: string | null; description: string | null; tags: string | null;
+  uploadedAt: string;
 }
 
 // Screen API
@@ -108,9 +110,12 @@ export const categoriesApi = {
 // Media API
 export const mediaApi = {
   list: () => request<MediaAsset[]>(`${API}/media`),
-  upload: async (file: File): Promise<MediaAsset> => {
+  upload: async (file: File, meta?: { title?: string; description?: string; tags?: string }): Promise<MediaAsset> => {
     const form = new FormData()
     form.append('file', file)
+    if (meta?.title) form.append('title', meta.title)
+    if (meta?.description) form.append('description', meta.description)
+    if (meta?.tags) form.append('tags', meta.tags)
     const token = getToken()
     const headers: Record<string, string> = {}
     if (token) headers['Authorization'] = `Bearer ${token}`
@@ -129,6 +134,8 @@ export const mediaApi = {
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },
+  update: (id: number, data: { title?: string; description?: string; tags?: string }) =>
+    request<MediaAsset>(`${API}/media/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/media/${id}`, { method: 'DELETE' }),
 }
 
