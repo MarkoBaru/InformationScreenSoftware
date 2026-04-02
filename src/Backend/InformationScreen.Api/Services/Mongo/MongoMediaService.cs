@@ -149,9 +149,9 @@ public class MongoMediaService : IMediaService
             .Set(m => m.Description, description)
             .Set(m => m.Tags, tags);
 
-        var result = await MediaAssets.FindOneAndUpdateAsync(
+        var result = await MediaAssets.FindOneAndUpdateAsync<MongoMediaAsset, MongoMediaAsset>(
             m => m.Id == id, update,
-            new FindOneAndUpdateOptions<MongoMediaAsset> { ReturnDocument = ReturnDocument.After });
+            new FindOneAndUpdateOptions<MongoMediaAsset, MongoMediaAsset> { ReturnDocument = ReturnDocument.After });
 
         if (result == null) return null;
 
