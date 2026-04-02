@@ -168,7 +168,7 @@ export default function AnnouncementsPage() {
           )}
 
           <div className="form-group">
-            <label>Nicht anzeigen auf diesen Screens:</label>
+            <label><span style={{ color: '#c62828', fontWeight: 700 }}>Nicht anzeigen</span> auf diesen Screens:</label>
             <div className="checkbox-group" style={{ marginTop: 4 }}>
               {allScreens.map(s => (
                 <label key={s.id} className={`screen-chip ${excludedScreenIds.includes(s.id) ? 'screen-chip--excluded' : ''}`}>

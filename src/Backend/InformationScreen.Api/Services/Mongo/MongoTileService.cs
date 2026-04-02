@@ -182,7 +182,7 @@ public class MongoTileService : ITileService
                     t.CategoryId, catName
                 );
             })
-            .OrderBy(t => t.SortOrder)
+            .OrderByDescending(t => t.NewsFrom)
             .ToList();
     }
 
