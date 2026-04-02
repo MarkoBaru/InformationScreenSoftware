@@ -484,12 +484,6 @@ export default function TileEditPage() {
           </div>
         )}
 
-        {/* Common fields continued */}
-        <div className="form-group">
-          <label>Sortierung</label>
-          <input type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
-        </div>
-
         <div className="form-group">
           <label>Kategorie</label>
           <select value={categoryId} onChange={(e) => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))}>
@@ -556,19 +550,6 @@ export default function TileEditPage() {
           <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
             Wenn ein Zeitraum gesetzt ist, erscheint dieser Inhalt auf dem Kiosk-Screen im Bereich «Neue Inhalte» auf der rechten Seite.
             Vor und nach dem angegebenen Zeitraum wird der Eintrag dort nicht angezeigt. Leer lassen = nicht im News-Bereich anzeigen.
-          </p>
-        </div>
-
-        <div className="form-group">
-          <label>Übergeordneter Ordner</label>
-          <select value={parentTileId} onChange={(e) => setParentTileId(e.target.value === '' ? '' : Number(e.target.value))}>
-            <option value="">Kein Ordner (Hauptebene)</option>
-            {allTiles.filter(t => t.contentType === 'Folder' && t.id !== Number(id)).map((t) => (
-              <option key={t.id} value={t.id}>{t.title}</option>
-            ))}
-          </select>
-          <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>
-            Diesem Inhalt einem Ordner zuweisen, um ihn als Unterinhalt anzuzeigen.
           </p>
         </div>
 
