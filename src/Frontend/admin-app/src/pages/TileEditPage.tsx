@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { tilesApi, categoriesApi, mediaApi, Category, MediaAsset, TileList } from '../api'
+import { tilesApi, categoriesApi, mediaApi, Category, MediaAsset } from '../api'
 import RichTextEditor from '../components/RichTextEditor'
 import './PageStyles.css'
 
@@ -37,7 +37,6 @@ export default function TileEditPage() {
   const [showMediaPicker, setShowMediaPicker] = useState<'button' | 'article' | 'image' | 'video' | 'pdf' | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [allTiles, setAllTiles] = useState<TileList[]>([])
 
   // Schichtplan-spezifische Felder
   const [spBaseUrl, setSpBaseUrl] = useState('https://abb.sharepoint.com/teams/CHCMC-Produktion9/_layouts/15/Doc.aspx?sourcedoc={DOCUMENT-ID}')
@@ -50,7 +49,6 @@ export default function TileEditPage() {
 
   useEffect(() => {
     categoriesApi.list().then(setAllCategories).catch(() => {})
-    tilesApi.list().then(setAllTiles).catch(() => {})
 
     if (!isNew) {
       tilesApi.get(Number(id)).then((t) => {
