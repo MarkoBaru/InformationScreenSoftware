@@ -787,3 +787,37 @@
   border-top: 1px solid var(--border);
   padding: 12px;
 }
+
+/* Audit Log Table */
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.audit-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg-dark, #f5f5f5);
+  border-bottom: 2px solid var(--border);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.audit-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.audit-table tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+.audit-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+}

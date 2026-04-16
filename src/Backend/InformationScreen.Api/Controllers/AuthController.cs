@@ -10,10 +10,12 @@ namespace InformationScreen.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IAuditService _audit;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IAuditService audit)
     {
         _authService = authService;
+        _audit = audit;
     }
 
     [HttpPost("login")]
@@ -23,6 +25,7 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(request);
         if (result == null)
             return Unauthorized(new { message = "Benutzername oder Passwort falsch." });
+        await _audit.LogAsync(result.User.Id, result.User.Username, "Login", "Auth", details: "Erfolgreich eingeloggt");
         return Ok(result);
     }
 
@@ -43,11 +46,16 @@ public class AuthController : ControllerBase
 public class UsersController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IAuditService _audit;
 
-    public UsersController(IAuthService authService)
+    public UsersController(IAuthService authService, IAuditService audit)
     {
         _authService = authService;
+        _audit = audit;
     }
+
+    private (int id, string name) CurrentUser =>
+        (int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value), User.FindFirst(System.Security.Claims.ClaimTypes.Name)!.Value);
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -68,6 +76,8 @@ public class UsersController : ControllerBase
     {
         var user = await _authService.CreateUserAsync(request);
         if (user == null) return Conflict(new { message = "Benutzername existiert bereits." });
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Erstellt", "Benutzer", user.Id, user.Username);
         return Created($"/api/admin/users/{user.Id}", user);
     }
 
@@ -76,13 +86,18 @@ public class UsersController : ControllerBase
     {
         var user = await _authService.UpdateUserAsync(id, request);
         if (user == null) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Benutzer", id, user.Username);
         return Ok(user);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        var existing = await _authService.GetUserByIdAsync(id);
         if (!await _authService.DeleteUserAsync(id)) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Gelöscht", "Benutzer", id, existing?.Username);
         return NoContent();
     }
 }

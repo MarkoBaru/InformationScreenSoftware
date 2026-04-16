@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
@@ -11,11 +12,16 @@ namespace InformationScreen.Api.Controllers;
 public class AdminScreensController : ControllerBase
 {
     private readonly IScreenService _screenService;
+    private readonly IAuditService _audit;
 
-    public AdminScreensController(IScreenService screenService)
+    public AdminScreensController(IScreenService screenService, IAuditService audit)
     {
         _screenService = screenService;
+        _audit = audit;
     }
+
+    private (int id, string name) CurrentUser =>
+        (int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value), User.FindFirst(ClaimTypes.Name)!.Value);
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -35,6 +41,8 @@ public class AdminScreensController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateScreenRequest request)
     {
         var screen = await _screenService.CreateAsync(request);
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Erstellt", "Screen", screen.Id, screen.Name);
         return CreatedAtAction(nameof(GetById), new { id = screen.Id }, screen);
     }
 
@@ -43,13 +51,18 @@ public class AdminScreensController : ControllerBase
     {
         var screen = await _screenService.UpdateAsync(id, request);
         if (screen == null) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Screen", id, screen.Name);
         return Ok(screen);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        var existing = await _screenService.GetByIdAsync(id);
         if (!await _screenService.DeleteAsync(id)) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Gelöscht", "Screen", id, existing?.Name);
         return NoContent();
     }
 
@@ -57,6 +70,8 @@ public class AdminScreensController : ControllerBase
     public async Task<IActionResult> UpdateTiles(int id, [FromBody] UpdateScreenTilesRequest request)
     {
         if (!await _screenService.UpdateTileAssignmentsAsync(id, request)) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Screen", id, "Tile-Zuordnungen aktualisiert");
         return NoContent();
     }
 }

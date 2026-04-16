@@ -238,3 +238,16 @@ public record UpdateAnnouncementRequest(
     DateTime? ActiveTo,
     List<int>? ExcludedScreenIds
 );
+
+// === AuditLog DTOs ===
+
+public record AuditLogDto(
+    int Id,
+    int UserId,
+    string Username,
+    string Action,
+    string EntityType,
+    int? EntityId,
+    string? Details,
+    DateTime Timestamp
+);

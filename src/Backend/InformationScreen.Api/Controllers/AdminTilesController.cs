@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using InformationScreen.Api.DTOs;
@@ -11,11 +12,16 @@ namespace InformationScreen.Api.Controllers;
 public class AdminTilesController : ControllerBase
 {
     private readonly ITileService _tileService;
+    private readonly IAuditService _audit;
 
-    public AdminTilesController(ITileService tileService)
+    public AdminTilesController(ITileService tileService, IAuditService audit)
     {
         _tileService = tileService;
+        _audit = audit;
     }
+
+    private (int id, string name) CurrentUser =>
+        (int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value), User.FindFirst(ClaimTypes.Name)!.Value);
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -35,6 +41,8 @@ public class AdminTilesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateTileRequest request)
     {
         var tile = await _tileService.CreateAsync(request);
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Erstellt", "Inhalt", tile.Id, tile.Title);
         return CreatedAtAction(nameof(GetById), new { id = tile.Id }, tile);
     }
 
@@ -43,13 +51,18 @@ public class AdminTilesController : ControllerBase
     {
         var tile = await _tileService.UpdateAsync(id, request);
         if (tile == null) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Inhalt", id, tile.Title);
         return Ok(tile);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
+        var existing = await _tileService.GetByIdAsync(id);
         if (!await _tileService.DeleteAsync(id)) return NotFound();
+        var u = CurrentUser;
+        await _audit.LogAsync(u.id, u.name, "Gelöscht", "Inhalt", id, existing?.Title);
         return NoContent();
     }
 }

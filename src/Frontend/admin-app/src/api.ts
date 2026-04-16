@@ -201,3 +201,16 @@ export const announcementsApi = {
     request<Announcement>(`${API}/announcements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/announcements/${id}`, { method: 'DELETE' }),
 }
+
+// AuditLog types
+export interface AuditLog {
+  id: number; userId: number; username: string;
+  action: string; entityType: string;
+  entityId: number | null; details: string | null;
+  timestamp: string;
+}
+
+// AuditLog API (Admin only)
+export const auditLogApi = {
+  list: (limit = 200) => request<AuditLog[]>(`${API}/audit-logs?limit=${limit}`),
+}

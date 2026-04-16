@@ -12,6 +12,7 @@ import CategoriesPage from './pages/CategoriesPage'
 import UsersPage from './pages/UsersPage'
 import SettingsPage from './pages/SettingsPage'
 import AnnouncementsPage from './pages/AnnouncementsPage'
+import AuditLogPage from './pages/AuditLogPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -44,6 +45,9 @@ function App() {
         )}
         {user?.role === 'Admin' && (
           <Route path="/settings" element={<SettingsPage />} />
+        )}
+        {user?.role === 'Admin' && (
+          <Route path="/audit-log" element={<AuditLogPage />} />
         )}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

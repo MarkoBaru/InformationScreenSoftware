@@ -112,6 +112,11 @@ public class MongoContext
         var announcements = _database.GetCollection<MongoAnnouncement>("announcements");
         announcements.Indexes.CreateOne(new CreateIndexModel<MongoAnnouncement>(
             Builders<MongoAnnouncement>.IndexKeys.Descending(a => a.CreatedAt)));
+
+        // Index on auditLogs timestamp descending
+        var auditLogs = _database.GetCollection<MongoAuditLog>("auditLogs");
+        auditLogs.Indexes.CreateOne(new CreateIndexModel<MongoAuditLog>(
+            Builders<MongoAuditLog>.IndexKeys.Descending(l => l.Timestamp)));
     }
 }
 
@@ -222,4 +227,18 @@ public class MongoAnnouncement
     public List<int> ExcludedScreenIds { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class MongoAuditLog
+{
+    [BsonId]
+    [BsonRepresentation(BsonType.Int32)]
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;       // Login, Create, Update, Delete
+    public string EntityType { get; set; } = string.Empty;   // Auth, Tile, Screen, Media, Category, Announcement, User, Settings
+    public int? EntityId { get; set; }
+    public string? Details { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
