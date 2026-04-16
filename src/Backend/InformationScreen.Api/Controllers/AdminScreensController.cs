@@ -13,11 +13,13 @@ public class AdminScreensController : ControllerBase
 {
     private readonly IScreenService _screenService;
     private readonly IAuditService _audit;
+    private readonly IContentCache _cache;
 
-    public AdminScreensController(IScreenService screenService, IAuditService audit)
+    public AdminScreensController(IScreenService screenService, IAuditService audit, IContentCache cache)
     {
         _screenService = screenService;
         _audit = audit;
+        _cache = cache;
     }
 
     private (int id, string name) CurrentUser =>
@@ -43,6 +45,7 @@ public class AdminScreensController : ControllerBase
         var screen = await _screenService.CreateAsync(request);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Erstellt", "Screen", screen.Id, screen.Name);
+        await _cache.TouchAsync("screens");
         return CreatedAtAction(nameof(GetById), new { id = screen.Id }, screen);
     }
 
@@ -53,6 +56,7 @@ public class AdminScreensController : ControllerBase
         if (screen == null) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Screen", id, screen.Name);
+        await _cache.TouchAsync("screens");
         return Ok(screen);
     }
 
@@ -63,6 +67,7 @@ public class AdminScreensController : ControllerBase
         if (!await _screenService.DeleteAsync(id)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Gelöscht", "Screen", id, existing?.Name);
+        await _cache.TouchAsync("screens");
         return NoContent();
     }
 
@@ -72,6 +77,7 @@ public class AdminScreensController : ControllerBase
         if (!await _screenService.UpdateTileAssignmentsAsync(id, request)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Screen", id, "Tile-Zuordnungen aktualisiert");
+        await _cache.TouchAsync("screens");
         return NoContent();
     }
 }

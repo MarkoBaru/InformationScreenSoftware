@@ -49,6 +49,7 @@ if (databaseProvider.Equals("MongoDB", StringComparison.OrdinalIgnoreCase))
     builder.Services.AddScoped<ISettingsService, MongoSettingsService>();
     builder.Services.AddScoped<IAnnouncementService, MongoAnnouncementService>();
     builder.Services.AddScoped<IAuditService, MongoAuditService>();
+    builder.Services.AddSingleton<IContentCache, MongoContentCache>();
 }
 else
 {
@@ -65,6 +66,7 @@ else
     builder.Services.AddSingleton(new MongoContext("mongodb://localhost:27017", "informationscreen"));
     builder.Services.AddScoped<IAnnouncementService, MongoAnnouncementService>();
     builder.Services.AddScoped<IAuditService, MongoAuditService>();
+    builder.Services.AddSingleton<IContentCache, MongoContentCache>();
 }
 
 // JWT Authentication

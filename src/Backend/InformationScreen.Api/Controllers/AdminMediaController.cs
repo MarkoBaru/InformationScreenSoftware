@@ -12,11 +12,13 @@ public class AdminMediaController : ControllerBase
 {
     private readonly IMediaService _mediaService;
     private readonly IAuditService _audit;
+    private readonly IContentCache _cache;
 
-    public AdminMediaController(IMediaService mediaService, IAuditService audit)
+    public AdminMediaController(IMediaService mediaService, IAuditService audit, IContentCache cache)
     {
         _mediaService = mediaService;
         _audit = audit;
+        _cache = cache;
     }
 
     private (int id, string name) CurrentUser =>
@@ -53,6 +55,7 @@ public class AdminMediaController : ControllerBase
         var asset = await _mediaService.UploadAsync(file, title, description, tags);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Hochgeladen", "Medien", asset.Id, asset.FileName);
+        await _cache.TouchAsync("media");
         return Ok(asset);
     }
 
@@ -63,6 +66,7 @@ public class AdminMediaController : ControllerBase
         if (result == null) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Medien", id, result.FileName);
+        await _cache.TouchAsync("media");
         return Ok(result);
     }
 
@@ -74,6 +78,7 @@ public class AdminMediaController : ControllerBase
         if (!await _mediaService.DeleteAsync(id)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Gelöscht", "Medien", id, media?.FileName);
+        await _cache.TouchAsync("media");
         return NoContent();
     }
 }

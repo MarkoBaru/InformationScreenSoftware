@@ -13,11 +13,13 @@ public class AdminAnnouncementsController : ControllerBase
 {
     private readonly IAnnouncementService _service;
     private readonly IAuditService _audit;
+    private readonly IContentCache _cache;
 
-    public AdminAnnouncementsController(IAnnouncementService service, IAuditService audit)
+    public AdminAnnouncementsController(IAnnouncementService service, IAuditService audit, IContentCache cache)
     {
         _service = service;
         _audit = audit;
+        _cache = cache;
     }
 
     private (int id, string name) CurrentUser =>
@@ -43,6 +45,7 @@ public class AdminAnnouncementsController : ControllerBase
         var item = await _service.CreateAsync(request);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Erstellt", "Nachricht", item.Id, item.Title);
+        await _cache.TouchAsync("announcements");
         return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
     }
 
@@ -53,6 +56,7 @@ public class AdminAnnouncementsController : ControllerBase
         if (item == null) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Nachricht", id, item.Title);
+        await _cache.TouchAsync("announcements");
         return Ok(item);
     }
 
@@ -63,6 +67,7 @@ public class AdminAnnouncementsController : ControllerBase
         if (!await _service.DeleteAsync(id)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Gelöscht", "Nachricht", id, existing?.Title);
+        await _cache.TouchAsync("announcements");
         return NoContent();
     }
 }

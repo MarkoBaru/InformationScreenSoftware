@@ -13,11 +13,13 @@ public class AdminCategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
     private readonly IAuditService _audit;
+    private readonly IContentCache _cache;
 
-    public AdminCategoriesController(ICategoryService categoryService, IAuditService audit)
+    public AdminCategoriesController(ICategoryService categoryService, IAuditService audit, IContentCache cache)
     {
         _categoryService = categoryService;
         _audit = audit;
+        _cache = cache;
     }
 
     private (int id, string name) CurrentUser =>
@@ -35,6 +37,7 @@ public class AdminCategoriesController : ControllerBase
         var category = await _categoryService.CreateAsync(request);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Erstellt", "Kategorie", category.Id, category.Name);
+        await _cache.TouchAsync("categories");
         return Ok(category);
     }
 
@@ -45,6 +48,7 @@ public class AdminCategoriesController : ControllerBase
         if (category == null) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Kategorie", id, category.Name);
+        await _cache.TouchAsync("categories");
         return Ok(category);
     }
 
@@ -56,6 +60,7 @@ public class AdminCategoriesController : ControllerBase
         if (!await _categoryService.DeleteAsync(id)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Gelöscht", "Kategorie", id, cat?.Name);
+        await _cache.TouchAsync("categories");
         return NoContent();
     }
 
@@ -65,6 +70,7 @@ public class AdminCategoriesController : ControllerBase
         await _categoryService.ReorderAsync(request.CategoryIds);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Kategorie", details: "Reihenfolge geändert");
+        await _cache.TouchAsync("categories");
         return NoContent();
     }
 }

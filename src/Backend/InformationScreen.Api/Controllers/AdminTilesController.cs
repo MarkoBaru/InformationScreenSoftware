@@ -13,11 +13,13 @@ public class AdminTilesController : ControllerBase
 {
     private readonly ITileService _tileService;
     private readonly IAuditService _audit;
+    private readonly IContentCache _cache;
 
-    public AdminTilesController(ITileService tileService, IAuditService audit)
+    public AdminTilesController(ITileService tileService, IAuditService audit, IContentCache cache)
     {
         _tileService = tileService;
         _audit = audit;
+        _cache = cache;
     }
 
     private (int id, string name) CurrentUser =>
@@ -43,6 +45,7 @@ public class AdminTilesController : ControllerBase
         var tile = await _tileService.CreateAsync(request);
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Erstellt", "Inhalt", tile.Id, tile.Title);
+        await _cache.TouchAsync("tiles");
         return CreatedAtAction(nameof(GetById), new { id = tile.Id }, tile);
     }
 
@@ -53,6 +56,7 @@ public class AdminTilesController : ControllerBase
         if (tile == null) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Bearbeitet", "Inhalt", id, tile.Title);
+        await _cache.TouchAsync("tiles");
         return Ok(tile);
     }
 
@@ -63,6 +67,7 @@ public class AdminTilesController : ControllerBase
         if (!await _tileService.DeleteAsync(id)) return NotFound();
         var u = CurrentUser;
         await _audit.LogAsync(u.id, u.name, "Gelöscht", "Inhalt", id, existing?.Title);
+        await _cache.TouchAsync("tiles");
         return NoContent();
     }
 }

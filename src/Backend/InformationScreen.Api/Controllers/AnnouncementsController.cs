@@ -8,16 +8,22 @@ namespace InformationScreen.Api.Controllers;
 public class AnnouncementsController : ControllerBase
 {
     private readonly IAnnouncementService _service;
+    private readonly IContentCache _cache;
 
-    public AnnouncementsController(IAnnouncementService service)
+    public AnnouncementsController(IAnnouncementService service, IContentCache cache)
     {
         _service = service;
+        _cache = cache;
     }
 
     [HttpGet("screen/{screenId:int}")]
     public async Task<IActionResult> GetForScreen(int screenId)
     {
-        return Ok(await _service.GetActiveForScreenAsync(screenId));
+        var announcements = await _cache.GetOrLoadAsync(
+            $"announcements:{screenId}",
+            new[] { "announcements" },
+            async () => await _service.GetActiveForScreenAsync(screenId));
+        return Ok(announcements);
     }
 
     [HttpGet("debug")]
