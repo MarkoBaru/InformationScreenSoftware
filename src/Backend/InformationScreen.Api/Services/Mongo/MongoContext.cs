@@ -204,6 +204,7 @@ public class MongoUser
     public string DisplayName { get; set; } = string.Empty;
     public string Role { get; set; } = "User";
     public bool IsActive { get; set; } = true;
+    public int? DefaultCategoryId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

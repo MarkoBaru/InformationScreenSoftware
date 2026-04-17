@@ -65,7 +65,8 @@ public class MongoAuthService : IAuthService
             Username = request.Username,
             PasswordHash = HashPassword(request.Password),
             DisplayName = request.DisplayName,
-            Role = request.Role.ToString()
+            Role = request.Role.ToString(),
+            DefaultCategoryId = request.DefaultCategoryId
         };
 
         await Users.InsertOneAsync(user);
@@ -77,7 +78,8 @@ public class MongoAuthService : IAuthService
         var updateDef = Builders<MongoUser>.Update
             .Set(u => u.DisplayName, request.DisplayName)
             .Set(u => u.Role, request.Role.ToString())
-            .Set(u => u.IsActive, request.IsActive);
+            .Set(u => u.IsActive, request.IsActive)
+            .Set(u => u.DefaultCategoryId, request.DefaultCategoryId);
 
         if (!string.IsNullOrEmpty(request.Password))
             updateDef = updateDef.Set(u => u.PasswordHash, HashPassword(request.Password));
@@ -157,5 +159,5 @@ public class MongoAuthService : IAuthService
 
     private static UserDto MapToDto(MongoUser user) =>
         new(user.Id, user.Username, user.DisplayName,
-            Enum.Parse<UserRole>(user.Role), user.IsActive, user.CreatedAt);
+            Enum.Parse<UserRole>(user.Role), user.IsActive, user.DefaultCategoryId, user.CreatedAt);
 }

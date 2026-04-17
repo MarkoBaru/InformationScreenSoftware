@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { screensApi, Screen, ScreenList, Tile, tilesApi, TileList } from '../api'
+import { screensApi, Screen, ScreenList, Tile, tilesApi, TileList, categoriesApi, Category } from '../api'
+import { useAuth } from '../context/AuthContext'
 import './PageStyles.css'
 
 const CONTENT_ICONS: Record<string, string> = {
@@ -459,7 +460,7 @@ function TreeNodeRow({ node, depth, expanded, onToggle, allTiles, onTilesChanged
   )
 }
 
-function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenList; allScreens: ScreenList[] }) {
+function ScreenSection({ screenSummary, allScreens, filterCategoryName }: { screenSummary: ScreenList; allScreens: ScreenList[]; filterCategoryName: string }) {
   const [screen, setScreen] = useState<Screen | null>(null)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [loading, setLoading] = useState(false)
@@ -524,11 +525,12 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
     const catMap = new Map<string, TreeNode[]>()
     for (const node of roots) {
       const catName = node.tile.categoryName || 'Allgemein'
+      if (filterCategoryName && catName !== filterCategoryName) continue
       if (!catMap.has(catName)) catMap.set(catName, [])
       catMap.get(catName)!.push(node)
     }
     return [...catMap.entries()].map(([name, nodes]) => ({ name, nodes }))
-  }, [roots])
+  }, [roots, filterCategoryName])
 
   const expandAll = () => {
     if (!screen) return
@@ -624,12 +626,26 @@ function ScreenSection({ screenSummary, allScreens }: { screenSummary: ScreenLis
 }
 
 export default function ScreenOverviewPage() {
+  const { user } = useAuth()
   const [screens, setScreens] = useState<ScreenList[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterCategory, setFilterCategory] = useState('')
 
   useEffect(() => {
     screensApi.list().then(setScreens).finally(() => setLoading(false))
+    categoriesApi.list().then(setCategories).catch(() => {})
   }, [])
+
+  // For non-admin users, apply their default category filter
+  const effectiveCategoryName = useMemo(() => {
+    if (filterCategory) return filterCategory
+    if (user?.role !== 'Admin' && user?.defaultCategoryId) {
+      const cat = categories.find(c => c.id === user.defaultCategoryId)
+      return cat?.name || ''
+    }
+    return ''
+  }, [filterCategory, user, categories])
 
   if (loading) return <div className="page"><p>Laden...</p></div>
 
@@ -640,6 +656,16 @@ export default function ScreenOverviewPage() {
     <div className="page">
       <div className="page__header">
         <h1>Übersicht</h1>
+        {user?.role === 'Admin' && categories.length > 0 && (
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{ marginLeft: 'auto', fontSize: '0.9rem', padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd' }}
+          >
+            <option value="">Alle Kategorien</option>
+            {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+          </select>
+        )}
       </div>
 
       <div className="stats-grid" style={{ marginBottom: 16 }}>
@@ -665,7 +691,7 @@ export default function ScreenOverviewPage() {
       ) : (
         <div className="overview-screens-list">
           {screens.map(s => (
-            <ScreenSection key={s.id} screenSummary={s} allScreens={screens} />
+            <ScreenSection key={s.id} screenSummary={s} allScreens={screens} filterCategoryName={effectiveCategoryName} />
           ))}
         </div>
       )}

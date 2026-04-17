@@ -142,7 +142,7 @@ export const mediaApi = {
 // Auth API
 export interface User {
   id: number; username: string; displayName: string;
-  role: 'User' | 'Admin'; isActive: boolean; createdAt: string;
+  role: 'User' | 'Admin'; isActive: boolean; defaultCategoryId: number | null; createdAt: string;
 }
 
 export interface LoginResponse {
@@ -169,9 +169,9 @@ export const authApi = {
 export const usersApi = {
   list: () => request<User[]>(`${API}/users`),
   get: (id: number) => request<User>(`${API}/users/${id}`),
-  create: (data: { username: string; password: string; displayName: string; role: string }) =>
+  create: (data: { username: string; password: string; displayName: string; role: string; defaultCategoryId?: number | null }) =>
     request<User>(`${API}/users`, { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: { displayName: string; role: string; isActive: boolean; password?: string }) =>
+  update: (id: number, data: { displayName: string; role: string; isActive: boolean; password?: string; defaultCategoryId?: number | null }) =>
     request<User>(`${API}/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: number) => request<void>(`${API}/users/${id}`, { method: 'DELETE' }),
 }

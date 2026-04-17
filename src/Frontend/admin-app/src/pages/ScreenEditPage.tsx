@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { screensApi, tilesApi, TileList } from '../api'
 import './PageStyles.css'
 
-type DefaultMode = 'None' | 'Static' | 'Slideshow'
+type DefaultMode = 'None' | 'Static' | 'Slideshow' | 'Home'
 
 export default function ScreenEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -32,7 +32,9 @@ export default function ScreenEditPage() {
         setIsActive(s.isActive)
 
         // Map backend types to our UI mode
-        if (s.defaultContentType === 'Static' && s.defaultContentData) {
+        if (s.defaultContentType === 'Home') {
+          setDefaultMode('Home')
+        } else if (s.defaultContentType === 'Static' && s.defaultContentData) {
           setDefaultMode('Static')
           setSelectedTileId(s.defaultContentData)
         } else if (s.defaultContentType === 'Slideshow' && s.defaultContentData) {
@@ -138,6 +140,7 @@ export default function ScreenEditPage() {
             onChange={(e) => setDefaultMode(e.target.value as DefaultMode)}
           >
             <option value="None">Keiner</option>
+            <option value="Home">Home-Seite</option>
             <option value="Static">Spezifischer Inhalt</option>
             <option value="Slideshow">Slideshow</option>
           </select>

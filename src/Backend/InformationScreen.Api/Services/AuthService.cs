@@ -46,7 +46,7 @@ public class AuthService : IAuthService
     {
         return await _db.Users
             .OrderBy(u => u.Username)
-            .Select(u => new UserDto(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, u.CreatedAt))
+            .Select(u => new UserDto(u.Id, u.Username, u.DisplayName, u.Role, u.IsActive, null, u.CreatedAt))
             .ToListAsync();
     }
 
@@ -158,5 +158,5 @@ public class AuthService : IAuthService
     }
 
     private static UserDto MapToDto(AppUser user) =>
-        new(user.Id, user.Username, user.DisplayName, user.Role, user.IsActive, user.CreatedAt);
+        new(user.Id, user.Username, user.DisplayName, user.Role, user.IsActive, null, user.CreatedAt);
 }

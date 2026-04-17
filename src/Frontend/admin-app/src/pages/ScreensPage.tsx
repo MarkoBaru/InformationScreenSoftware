@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { screensApi, tilesApi, mediaApi, ScreenList, TileList } from '../api'
+import { useAuth } from '../context/AuthContext'
 import './PageStyles.css'
 
 export default function ScreensPage() {
+  const { user } = useAuth()
   const [screens, setScreens] = useState<ScreenList[]>([])
   const [tiles, setTiles] = useState<TileList[]>([])
   const [mediaCount, setMediaCount] = useState(0)
@@ -101,9 +103,11 @@ export default function ScreensPage() {
 
       <div className="page__header">
         <h1>Screens</h1>
-        <button className="btn btn--primary" onClick={() => navigate('/screens/new')}>
-          + Neuer Screen
-        </button>
+        {user?.role === 'Admin' && (
+          <button className="btn btn--primary" onClick={() => navigate('/screens/new')}>
+            + Neuer Screen
+          </button>
+        )}
       </div>
 
       <div className="filter-bar">
@@ -150,9 +154,13 @@ export default function ScreensPage() {
                 <td>
                   <div className="action-buttons">
                     <a className="btn btn--small" href={`/kiosk/${s.slug}`} target="_blank" rel="noopener noreferrer">Ansehen</a>
-                    <button className="btn btn--small" onClick={() => navigate(`/screens/${s.id}`)}>Bearbeiten</button>
-                    <button className="btn btn--small" onClick={() => openDuplicate(s)}>Duplizieren</button>
-                    <button className="btn btn--small btn--danger" onClick={() => handleDelete(s.id, s.name)}>Löschen</button>
+                    {user?.role === 'Admin' && (
+                      <>
+                        <button className="btn btn--small" onClick={() => navigate(`/screens/${s.id}`)}>Bearbeiten</button>
+                        <button className="btn btn--small" onClick={() => openDuplicate(s)}>Duplizieren</button>
+                        <button className="btn btn--small btn--danger" onClick={() => handleDelete(s.id, s.name)}>Löschen</button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

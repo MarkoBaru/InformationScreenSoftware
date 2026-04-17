@@ -25,6 +25,7 @@ public class MediaController : ControllerBase
 
         var safeFileName = new string(asset.FileName.Select(c => c > 127 ? '_' : c).ToArray());
         Response.Headers["Content-Disposition"] = $"inline; filename=\"{safeFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(asset.FileName)}";
+        Response.Headers["Cache-Control"] = "public, max-age=86400, immutable";
         return File(stream, asset.MimeType, enableRangeProcessing: true);
     }
 }

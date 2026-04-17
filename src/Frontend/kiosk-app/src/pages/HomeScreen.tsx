@@ -61,6 +61,12 @@ export default function HomeScreen() {
   }, [])
 
   const handleIdle = useCallback(() => {
+    // Home mode: always navigate back to home screen
+    if (screen?.defaultContentType === 'Home') {
+      setViewingTile(null)
+      setFolderStack([])
+      return
+    }
     if (viewingTile) return
     // Tile-based default: open that tile's content directly
     if (screen?.defaultContentType === 'Static' && screen.defaultContentData) {
@@ -162,7 +168,7 @@ export default function HomeScreen() {
 
   return (
     <div className="home-screen">
-      {showIdle && screen.defaultContentType !== 'None' && (
+      {showIdle && screen.defaultContentType !== 'None' && screen.defaultContentType !== 'Home' && (
         <IdleOverlay screen={screen} onInteraction={handleWakeUp} />
       )}
 

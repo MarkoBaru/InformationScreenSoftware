@@ -192,6 +192,7 @@ public record UserDto(
     string DisplayName,
     UserRole Role,
     bool IsActive,
+    int? DefaultCategoryId,
     DateTime CreatedAt
 );
 
@@ -199,14 +200,16 @@ public record CreateUserRequest(
     string Username,
     string Password,
     string DisplayName,
-    UserRole Role
+    UserRole Role,
+    int? DefaultCategoryId
 );
 
 public record UpdateUserRequest(
     string DisplayName,
     UserRole Role,
     bool IsActive,
-    string? Password
+    string? Password,
+    int? DefaultCategoryId
 );
 
 // === Announcement DTOs ===

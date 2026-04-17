@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { usersApi, User } from '../api'
+import { usersApi, categoriesApi, User, Category } from '../api'
 import { useAuth } from '../context/AuthContext'
 import './PageStyles.css'
 
@@ -8,13 +8,15 @@ interface UserForm {
   password: string
   displayName: string
   role: 'User' | 'Admin'
+  defaultCategoryId: number | null
 }
 
-const emptyForm: UserForm = { username: '', password: '', displayName: '', role: 'User' }
+const emptyForm: UserForm = { username: '', password: '', displayName: '', role: 'User', defaultCategoryId: null }
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<UserForm>(emptyForm)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -22,6 +24,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsers()
+    categoriesApi.list().then(setCategories).catch(() => {})
   }, [])
 
   const loadUsers = async () => {
@@ -46,6 +49,7 @@ export default function UsersPage() {
         password: form.password,
         displayName: form.displayName.trim(),
         role: form.role,
+        defaultCategoryId: form.defaultCategoryId,
       })
       setUsers((prev) => [...prev, newUser])
       setForm(emptyForm)
@@ -68,6 +72,7 @@ export default function UsersPage() {
         displayName: form.displayName.trim(),
         role: form.role,
         isActive: true,
+        defaultCategoryId: form.defaultCategoryId,
         ...(form.password ? { password: form.password } : {}),
       })
       setUsers((prev) => prev.map((u) => (u.id === editingId ? updated : u)))
@@ -105,7 +110,7 @@ export default function UsersPage() {
 
   const startEdit = (user: User) => {
     setEditingId(user.id)
-    setForm({ username: user.username, password: '', displayName: user.displayName, role: user.role })
+    setForm({ username: user.username, password: '', displayName: user.displayName, role: user.role, defaultCategoryId: user.defaultCategoryId })
     setShowForm(true)
     setError('')
   }
@@ -168,6 +173,19 @@ export default function UsersPage() {
               <option value="Admin">Admin</option>
             </select>
           </div>
+          <div className="form-group">
+            <label>Standard-Kategorie</label>
+            <select
+              value={form.defaultCategoryId ?? ''}
+              onChange={(e) => setForm({ ...form, defaultCategoryId: e.target.value ? Number(e.target.value) : null })}
+            >
+              <option value="">Alle Kategorien (kein Filter)</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            <p className="hint">Schränkt die sichtbaren Inhalte auf der Übersichtsseite für diesen Benutzer ein</p>
+          </div>
           <div className="form-actions">
             <button type="submit" className="btn btn--primary">{editingId ? 'Speichern' : 'Erstellen'}</button>
             <button type="button" className="btn" onClick={cancelForm}>Abbrechen</button>
@@ -186,6 +204,7 @@ export default function UsersPage() {
               <th>Benutzername</th>
               <th>Anzeigename</th>
               <th>Rolle</th>
+              <th>Standard-Kategorie</th>
               <th>Status</th>
               <th>Erstellt am</th>
               <th>Aktionen</th>
@@ -200,6 +219,11 @@ export default function UsersPage() {
                   <span className={u.role === 'Admin' ? 'badge badge--success' : 'badge badge--muted'}>
                     {u.role === 'Admin' ? 'Administrator' : 'Benutzer'}
                   </span>
+                </td>
+                <td>
+                  {u.defaultCategoryId
+                    ? categories.find(c => c.id === u.defaultCategoryId)?.name || `ID ${u.defaultCategoryId}`
+                    : <span style={{ color: '#999' }}>Alle</span>}
                 </td>
                 <td>
                   <span className={u.isActive ? 'badge badge--success' : 'badge badge--muted'}>

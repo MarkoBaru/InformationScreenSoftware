@@ -5,7 +5,8 @@ public enum DefaultContentType
     None,
     Video,
     Slideshow,
-    Static
+    Static,
+    Home
 }
 
 public class Screen

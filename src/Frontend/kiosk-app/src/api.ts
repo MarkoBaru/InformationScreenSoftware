@@ -2,7 +2,7 @@ export interface ScreenData {
   id: number
   name: string
   slug: string
-  defaultContentType: 'None' | 'Video' | 'Slideshow' | 'Static'
+  defaultContentType: 'None' | 'Video' | 'Slideshow' | 'Static' | 'Home'
   defaultContentData: string | null
   idleTimeoutSeconds: number
   slideshowIntervalSeconds: number
