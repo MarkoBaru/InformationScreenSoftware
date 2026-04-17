@@ -34,6 +34,15 @@
   display: flex;
   gap: 12px;
   z-index: 101;
+  transition: opacity 0.5s ease;
+}
+
+.content-viewer__nav-group--hidden {
+  opacity: 0.08;
+}
+
+.content-viewer__nav-group--hidden:hover {
+  opacity: 1;
 }
 
 .content-viewer__back,

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
 import StreamPlayer from './StreamPlayer'
 import './ContentViewer.css'
 
@@ -51,6 +52,25 @@ interface ContentViewerProps {
 }
 
 export default function ContentViewer({ url, contentType, articleBody, title, onBack, onHome }: ContentViewerProps) {
+  const [navVisible, setNavVisible] = useState(true)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const resetTimer = useCallback(() => {
+    setNavVisible(true)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setNavVisible(false), 3000)
+  }, [])
+
+  useEffect(() => {
+    resetTimer()
+    const events = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel'] as const
+    events.forEach(e => window.addEventListener(e, resetTimer, { passive: true }))
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+      events.forEach(e => window.removeEventListener(e, resetTimer))
+    }
+  }, [resetTimer])
+
   const renderContent = () => {
     switch (contentType) {
       case 'FullscreenImage':
@@ -151,7 +171,7 @@ export default function ContentViewer({ url, contentType, articleBody, title, on
   return (
     <div className="content-viewer">
       {renderContent()}
-      <div className="content-viewer__nav-group">
+      <div className={`content-viewer__nav-group${navVisible ? '' : ' content-viewer__nav-group--hidden'}`}>
         {onHome && (
           <button className="content-viewer__home" onClick={onHome} type="button">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
