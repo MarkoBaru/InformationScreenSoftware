@@ -88,7 +88,7 @@ export default function ScreensPage() {
   }
 
   const openCreateChild = (parent: ScreenList) => {
-    const defaultName = `${parent.name} – Filiale`
+    const defaultName = `${parent.name} – Einsatzort`
     setChildParent(parent)
     setChildName(defaultName)
     setChildSlug(slugify(defaultName))
