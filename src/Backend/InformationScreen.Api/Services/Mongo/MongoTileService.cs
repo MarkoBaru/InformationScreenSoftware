@@ -143,7 +143,20 @@ public class MongoTileService : ITileService
         var screen = await Screens.Find(s => s.Id == screenId).FirstOrDefaultAsync();
         if (screen == null) return new List<TileDto>();
 
-        var tileIds = screen.Tiles.Select(t => t.TileId).ToList();
+        // Include parent tiles when this is a child screen
+        var allScreenTiles = new List<MongoScreenTile>(screen.Tiles);
+        if (screen.ParentScreenId.HasValue)
+        {
+            var parent = await Screens.Find(s => s.Id == screen.ParentScreenId.Value).FirstOrDefaultAsync();
+            if (parent != null)
+            {
+                // Add parent tiles that aren't already present (child tiles take precedence)
+                var existingIds = new HashSet<int>(allScreenTiles.Select(t => t.TileId));
+                allScreenTiles.AddRange(parent.Tiles.Where(t => !existingIds.Contains(t.TileId)));
+            }
+        }
+
+        var tileIds = allScreenTiles.Select(t => t.TileId).ToList();
         if (tileIds.Count == 0) return new List<TileDto>();
 
         var tiles = await Tiles.Find(
@@ -158,7 +171,7 @@ public class MongoTileService : ITileService
                 .ToDictionary(c => c.Id)
             : new Dictionary<int, MongoCategory>();
 
-        var sortMap = screen.Tiles.ToDictionary(st => st.TileId, st => st.SortOrderOverride);
+        var sortMap = allScreenTiles.ToDictionary(st => st.TileId, st => st.SortOrderOverride);
 
         return tiles
             .Where(t => t.NewsFrom.HasValue && t.NewsTo.HasValue &&
