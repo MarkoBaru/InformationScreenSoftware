@@ -28,6 +28,9 @@ export default function HomeScreen() {
   const [newsTiles, setNewsTiles] = useState<TileData[]>([])
   const now = useClock()
 
+  // Merged tiles: inherited from parent + own
+  const allTiles = useMemo(() => screen ? [...screen.inheritedTiles, ...screen.ownTiles] : [], [screen])
+
   // Poll announcements when screen data is available
   useEffect(() => {
     if (!screen) return
@@ -72,7 +75,7 @@ export default function HomeScreen() {
     if (screen?.defaultContentType === 'Static' && screen.defaultContentData) {
       const tileId = parseInt(screen.defaultContentData, 10)
       if (!isNaN(tileId)) {
-        const defaultTile = screen.tiles.find(t => t.id === tileId)
+        const defaultTile = allTiles.find(t => t.id === tileId)
         if (defaultTile) {
           setViewingTile(defaultTile)
           return
@@ -134,7 +137,7 @@ export default function HomeScreen() {
   // Flat list of tiles filtered by schedule and current folder context (no category grouping)
   const filteredTiles = useMemo(() => {
     if (!screen) return []
-    return screen.tiles.filter(tile => {
+    return allTiles.filter(tile => {
       if (currentFolderId !== null) {
         if (tile.parentTileId !== currentFolderId) return false
       } else {
@@ -143,7 +146,7 @@ export default function HomeScreen() {
       if (!isTileScheduledActive(tile)) return false
       return true
     })
-  }, [screen, currentFolderId, isTileScheduledActive])
+  }, [allTiles, screen, currentFolderId, isTileScheduledActive])
 
   if (loading) {
     return (

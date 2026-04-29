@@ -25,6 +25,10 @@ public class AppDbContext : DbContext
             e.HasIndex(s => s.Slug).IsUnique();
             e.Property(s => s.Name).IsRequired().HasMaxLength(200);
             e.Property(s => s.Slug).IsRequired().HasMaxLength(200);
+            e.HasOne(s => s.ParentScreen)
+             .WithMany(s => s.ChildScreens)
+             .HasForeignKey(s => s.ParentScreenId)
+             .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Tile>(e =>

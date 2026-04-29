@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { screensApi, tilesApi, TileList } from '../api'
+import { screensApi, tilesApi, TileList, Tile } from '../api'
 import './PageStyles.css'
 
 type DefaultMode = 'None' | 'Static' | 'Slideshow' | 'Home'
@@ -20,6 +20,9 @@ export default function ScreenEditPage() {
   const [isActive, setIsActive] = useState(true)
   const [allTiles, setAllTiles] = useState<TileList[]>([])
   const [saving, setSaving] = useState(false)
+  const [parentScreenId, setParentScreenId] = useState<number | null>(null)
+  const [parentScreenName, setParentScreenName] = useState<string | null>(null)
+  const [inheritedTiles, setInheritedTiles] = useState<Tile[]>([])
 
   useEffect(() => {
     tilesApi.list().then(setAllTiles).catch(() => {})
@@ -30,6 +33,9 @@ export default function ScreenEditPage() {
         setIdleTimeoutSeconds(s.idleTimeoutSeconds)
         setSlideshowIntervalSeconds(s.slideshowIntervalSeconds ?? 10)
         setIsActive(s.isActive)
+        setParentScreenId(s.parentScreenId ?? null)
+        setParentScreenName(s.parentScreenName ?? null)
+        setInheritedTiles(s.inheritedTiles ?? [])
 
         // Map backend types to our UI mode
         if (s.defaultContentType === 'Home') {
@@ -96,12 +102,14 @@ export default function ScreenEditPage() {
           defaultContentData,
           idleTimeoutSeconds,
           slideshowIntervalSeconds,
+          parentScreenId,
         })
       } else {
         await screensApi.update(Number(id), {
           name, slug, defaultContentType,
           defaultContentData,
           idleTimeoutSeconds, slideshowIntervalSeconds, isActive,
+          parentScreenId,
         })
       }
       navigate('/screens')
@@ -121,6 +129,14 @@ export default function ScreenEditPage() {
       </div>
 
       <form className="form-card" onSubmit={handleSubmit}>
+        {/* Parent Screen Info Banner */}
+        {parentScreenId && (
+          <div style={{ padding: '10px 14px', background: '#eef3ff', borderRadius: 'var(--radius)', borderLeft: '3px solid #4f7ef7', marginBottom: 8, fontSize: '0.875rem', color: '#3a5cbf' }}>
+            <strong>Child-Screen</strong> — erbt alle Inhalte von <strong>{parentScreenName}</strong>.
+            Der Default-Modus, Slug und Idle-Timeout können unabhängig eingestellt werden.
+          </div>
+        )}
+
         <div className="form-group">
           <label>Name</label>
           <input value={name} onChange={(e) => handleNameChange(e.target.value)} required />
@@ -235,6 +251,38 @@ export default function ScreenEditPage() {
           </button>
         </div>
       </form>
+
+      {/* Inherited Tiles Section (read-only) */}
+      {!isNew && inheritedTiles.length > 0 && (
+        <div className="form-card" style={{ marginTop: 24 }}>
+          <h3 style={{ margin: '0 0 12px', fontSize: '1rem', color: '#3a5cbf' }}>
+            Geerbte Inhalte vom Parent „{parentScreenName}"
+          </h3>
+          <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: '#666' }}>
+            Diese Inhalte stammen vom Parent-Screen und werden automatisch auf diesem Child-Screen angezeigt.
+            Sie können hier nur beim Parent-Screen geändert werden.
+          </p>
+          <table className="data-table">
+            <thead>
+              <tr><th>Titel</th><th>Typ</th><th>Kategorie</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {inheritedTiles.map((t) => (
+                <tr key={t.id} style={{ opacity: 0.7 }}>
+                  <td>{t.title}</td>
+                  <td><span className="badge badge--muted">{t.contentType}</span></td>
+                  <td>{t.categoryName ?? '—'}</td>
+                  <td>
+                    <span className={`badge ${t.isActive ? 'badge--success' : 'badge--muted'}`}>
+                      {t.isActive ? 'Aktiv' : 'Inaktiv'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

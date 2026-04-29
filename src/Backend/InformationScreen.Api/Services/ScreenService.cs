@@ -15,91 +15,119 @@ public class ScreenService : IScreenService
         _db = db;
     }
 
-    public async Task<ScreenDto?> GetBySlugAsync(string slug)
-    {
-        var screen = await _db.Screens
+    // ─── helpers ──────────────────────────────────────────────────────────────
+
+    private static TileDto MapTile(ScreenTile st) => new(
+        st.Tile.Id, st.Tile.Title, st.Tile.Description,
+        st.Tile.ImageUrl, st.Tile.ContentType, st.Tile.LinkUrl, st.Tile.LinkTarget,
+        st.Tile.ArticleBody,
+        st.SortOrderOverride ?? st.Tile.SortOrder,
+        st.Tile.IsActive,
+        st.Tile.ActiveFrom, st.Tile.ActiveTo,
+        st.Tile.NewsFrom, st.Tile.NewsTo,
+        st.Tile.ParentTileId,
+        st.Tile.CategoryId, st.Tile.Category?.Name
+    );
+
+    private IQueryable<Screen> ScreensWithTiles() =>
+        _db.Screens
             .Include(s => s.ScreenTiles)
                 .ThenInclude(st => st.Tile)
-                    .ThenInclude(t => t.Category)
+                    .ThenInclude(t => t.Category);
+
+    private static ScreenDto BuildDto(Screen screen, Screen? parent)
+    {
+        var ownTiles = screen.ScreenTiles
+            .OrderBy(st => st.SortOrderOverride ?? st.Tile.SortOrder)
+            .Select(MapTile)
+            .ToList();
+
+        var inheritedTiles = parent != null
+            ? parent.ScreenTiles
+                .OrderBy(st => st.SortOrderOverride ?? st.Tile.SortOrder)
+                .Select(MapTile)
+                .ToList()
+            : new List<TileDto>();
+
+        return new ScreenDto(
+            screen.Id, screen.Name, screen.Slug,
+            screen.DefaultContentType, screen.DefaultContentData,
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
+            screen.ParentScreenId, parent?.Name,
+            ownTiles, inheritedTiles
+        );
+    }
+
+    // ─── public API ───────────────────────────────────────────────────────────
+
+    public async Task<ScreenDto?> GetBySlugAsync(string slug)
+    {
+        var screen = await ScreensWithTiles()
             .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive);
 
         if (screen == null) return null;
 
-        var tiles = screen.ScreenTiles
-            .Where(st => st.Tile.IsActive)
-            .OrderBy(st => st.SortOrderOverride ?? st.Tile.SortOrder)
-            .Select(st => new TileDto(
-                st.Tile.Id,
-                st.Tile.Title,
-                st.Tile.Description,
-                st.Tile.ImageUrl,
-                st.Tile.ContentType,
-                st.Tile.LinkUrl,
-                st.Tile.LinkTarget,
-                st.Tile.ArticleBody,
-                st.SortOrderOverride ?? st.Tile.SortOrder,
-                st.Tile.IsActive,
-                st.Tile.ActiveFrom,
-                st.Tile.ActiveTo,
-                st.Tile.NewsFrom,
-                st.Tile.NewsTo,
-                st.Tile.ParentTileId,
-                st.Tile.CategoryId,
-                st.Tile.Category?.Name
-            ))
-            .ToList();
+        Screen? parent = null;
+        if (screen.ParentScreenId.HasValue)
+        {
+            parent = await ScreensWithTiles()
+                .FirstOrDefaultAsync(s => s.Id == screen.ParentScreenId.Value);
+        }
 
-        return new ScreenDto(
-            screen.Id, screen.Name, screen.Slug,
-            screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, tiles
-        );
+        return BuildDto(screen, parent);
     }
 
     public async Task<List<ScreenListDto>> GetAllAsync()
     {
-        return await _db.Screens
+        var screens = await _db.Screens
             .OrderBy(s => s.Name)
-            .Select(s => new ScreenListDto(
+            .Select(s => new
+            {
                 s.Id, s.Name, s.Slug,
-                s.DefaultContentType, s.IdleTimeoutSeconds,
-                s.IsActive, s.ScreenTiles.Count
-            ))
+                s.DefaultContentType, s.IdleTimeoutSeconds, s.IsActive,
+                TileCount = s.ScreenTiles.Count,
+                s.ParentScreenId
+            })
             .ToListAsync();
+
+        var allIds = screens.Select(s => s.Id).ToHashSet();
+        var parentIds = screens.Where(s => s.ParentScreenId.HasValue).Select(s => s.ParentScreenId!.Value).ToHashSet();
+
+        var parentNames = await _db.Screens
+            .Where(s => parentIds.Contains(s.Id))
+            .Select(s => new { s.Id, s.Name })
+            .ToDictionaryAsync(x => x.Id, x => x.Name);
+
+        var childCounts = screens
+            .Where(s => s.ParentScreenId.HasValue)
+            .GroupBy(s => s.ParentScreenId!.Value)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return screens.Select(s => new ScreenListDto(
+            s.Id, s.Name, s.Slug,
+            s.DefaultContentType, s.IdleTimeoutSeconds, s.IsActive,
+            s.TileCount,
+            s.ParentScreenId,
+            s.ParentScreenId.HasValue && parentNames.TryGetValue(s.ParentScreenId.Value, out var pn) ? pn : null,
+            childCounts.TryGetValue(s.Id, out var cc) ? cc : 0
+        )).ToList();
     }
 
     public async Task<ScreenDto?> GetByIdAsync(int id)
     {
-        var screen = await _db.Screens
-            .Include(s => s.ScreenTiles)
-                .ThenInclude(st => st.Tile)
-                    .ThenInclude(t => t.Category)
+        var screen = await ScreensWithTiles()
             .FirstOrDefaultAsync(s => s.Id == id);
 
         if (screen == null) return null;
 
-        var tiles = screen.ScreenTiles
-            .OrderBy(st => st.SortOrderOverride ?? st.Tile.SortOrder)
-            .Select(st => new TileDto(
-                st.Tile.Id, st.Tile.Title, st.Tile.Description,
-                st.Tile.ImageUrl, st.Tile.ContentType, st.Tile.LinkUrl, st.Tile.LinkTarget,
-                st.Tile.ArticleBody,
-                st.SortOrderOverride ?? st.Tile.SortOrder,
-                st.Tile.IsActive,
-                st.Tile.ActiveFrom,
-                st.Tile.ActiveTo,
-                st.Tile.NewsFrom,
-                st.Tile.NewsTo,
-                st.Tile.ParentTileId,
-                st.Tile.CategoryId, st.Tile.Category?.Name
-            ))
-            .ToList();
+        Screen? parent = null;
+        if (screen.ParentScreenId.HasValue)
+        {
+            parent = await ScreensWithTiles()
+                .FirstOrDefaultAsync(s => s.Id == screen.ParentScreenId.Value);
+        }
 
-        return new ScreenDto(
-            screen.Id, screen.Name, screen.Slug,
-            screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, tiles
-        );
+        return BuildDto(screen, parent);
     }
 
     public async Task<ScreenDto> CreateAsync(CreateScreenRequest request)
@@ -111,17 +139,14 @@ public class ScreenService : IScreenService
             DefaultContentType = request.DefaultContentType,
             DefaultContentData = request.DefaultContentData,
             IdleTimeoutSeconds = request.IdleTimeoutSeconds,
-            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds
+            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds,
+            ParentScreenId = request.ParentScreenId
         };
 
         _db.Screens.Add(screen);
         await _db.SaveChangesAsync();
 
-        return new ScreenDto(
-            screen.Id, screen.Name, screen.Slug,
-            screen.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, new List<TileDto>()
-        );
+        return BuildDto(screen, null);
     }
 
     public async Task<ScreenDto?> UpdateAsync(int id, UpdateScreenRequest request)
@@ -136,6 +161,7 @@ public class ScreenService : IScreenService
         screen.IdleTimeoutSeconds = request.IdleTimeoutSeconds;
         screen.SlideshowIntervalSeconds = request.SlideshowIntervalSeconds;
         screen.IsActive = request.IsActive;
+        screen.ParentScreenId = request.ParentScreenId;
         screen.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -174,3 +200,4 @@ public class ScreenService : IScreenService
         return true;
     }
 }
+

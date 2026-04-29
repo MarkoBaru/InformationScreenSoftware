@@ -7,7 +7,9 @@ export interface ScreenData {
   idleTimeoutSeconds: number
   slideshowIntervalSeconds: number
   isActive: boolean
-  tiles: TileData[]
+  parentScreenId: number | null
+  inheritedTiles: TileData[]
+  ownTiles: TileData[]
 }
 
 export interface TileData {

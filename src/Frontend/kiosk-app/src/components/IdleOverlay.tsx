@@ -19,8 +19,9 @@ export default function IdleOverlay({ screen, onInteraction }: IdleOverlayProps)
   if (screen.defaultContentType === 'Slideshow' && data) {
     try {
       const tileIds: number[] = JSON.parse(data)
+      const allTiles = [...screen.inheritedTiles, ...screen.ownTiles]
       const tiles = tileIds
-        .map(id => screen.tiles.find(t => t.id === id))
+        .map(id => allTiles.find(t => t.id === id))
         .filter((t): t is NonNullable<typeof t> => !!t)
       if (tiles.length > 0) {
         return <TileContentRotation tiles={tiles} intervalMs={(screen.slideshowIntervalSeconds ?? 10) * 1000} onInteraction={onInteraction} />

@@ -22,16 +22,35 @@ public class MongoScreenService : IScreenService
     {
         var screen = await Screens.Find(s => s.Slug == slug && s.IsActive).FirstOrDefaultAsync();
         if (screen == null) return null;
-        return await MapToDto(screen, activeOnly: true);
+
+        MongoScreen? parent = null;
+        if (screen.ParentScreenId.HasValue)
+            parent = await Screens.Find(s => s.Id == screen.ParentScreenId.Value).FirstOrDefaultAsync();
+
+        return await MapToDto(screen, parent, activeOnly: true);
     }
 
     public async Task<List<ScreenListDto>> GetAllAsync()
     {
         var screens = await Screens.Find(_ => true).ToListAsync();
+
+        var parentIds = screens.Where(s => s.ParentScreenId.HasValue).Select(s => s.ParentScreenId!.Value).Distinct().ToList();
+        var parentNames = parentIds.Count > 0
+            ? screens.Where(s => parentIds.Contains(s.Id)).ToDictionary(s => s.Id, s => s.Name)
+            : new Dictionary<int, string>();
+
+        var childCounts = screens
+            .Where(s => s.ParentScreenId.HasValue)
+            .GroupBy(s => s.ParentScreenId!.Value)
+            .ToDictionary(g => g.Key, g => g.Count());
+
         return screens.OrderBy(s => s.Name).Select(s => new ScreenListDto(
             s.Id, s.Name, s.Slug,
             Enum.Parse<DefaultContentType>(s.DefaultContentType),
-            s.IdleTimeoutSeconds, s.IsActive, s.Tiles?.Count ?? 0
+            s.IdleTimeoutSeconds, s.IsActive, s.Tiles?.Count ?? 0,
+            s.ParentScreenId,
+            s.ParentScreenId.HasValue && parentNames.TryGetValue(s.ParentScreenId.Value, out var pn) ? pn : null,
+            childCounts.TryGetValue(s.Id, out var cc) ? cc : 0
         )).ToList();
     }
 
@@ -39,7 +58,12 @@ public class MongoScreenService : IScreenService
     {
         var screen = await Screens.Find(s => s.Id == id).FirstOrDefaultAsync();
         if (screen == null) return null;
-        return await MapToDto(screen, activeOnly: false);
+
+        MongoScreen? parent = null;
+        if (screen.ParentScreenId.HasValue)
+            parent = await Screens.Find(s => s.Id == screen.ParentScreenId.Value).FirstOrDefaultAsync();
+
+        return await MapToDto(screen, parent, activeOnly: false);
     }
 
     public async Task<ScreenDto> CreateAsync(CreateScreenRequest request)
@@ -52,7 +76,8 @@ public class MongoScreenService : IScreenService
             DefaultContentType = request.DefaultContentType.ToString(),
             DefaultContentData = request.DefaultContentData,
             IdleTimeoutSeconds = request.IdleTimeoutSeconds,
-            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds
+            SlideshowIntervalSeconds = request.SlideshowIntervalSeconds,
+            ParentScreenId = request.ParentScreenId
         };
 
         Console.WriteLine($"[MongoScreenService] Inserting screen Id={screen.Id}, Name={screen.Name}");
@@ -70,7 +95,9 @@ public class MongoScreenService : IScreenService
         return new ScreenDto(
             screen.Id, screen.Name, screen.Slug,
             request.DefaultContentType, screen.DefaultContentData,
-            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive, new List<TileDto>()
+            screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
+            screen.ParentScreenId, null,
+            new List<TileDto>(), new List<TileDto>()
         );
     }
 
@@ -84,6 +111,7 @@ public class MongoScreenService : IScreenService
             .Set(s => s.IdleTimeoutSeconds, request.IdleTimeoutSeconds)
             .Set(s => s.SlideshowIntervalSeconds, request.SlideshowIntervalSeconds)
             .Set(s => s.IsActive, request.IsActive)
+            .Set(s => s.ParentScreenId, request.ParentScreenId)
             .Set(s => s.UpdatedAt, DateTime.UtcNow);
 
         var result = await Screens.UpdateOneAsync(s => s.Id == id, update);
@@ -114,18 +142,26 @@ public class MongoScreenService : IScreenService
         return result.MatchedCount > 0;
     }
 
-    private async Task<ScreenDto> MapToDto(MongoScreen screen, bool activeOnly)
+    private async Task<ScreenDto> MapToDto(MongoScreen screen, MongoScreen? parent, bool activeOnly)
     {
-        var tileIds = screen.Tiles.Select(t => t.TileId).ToList();
-        if (tileIds.Count == 0)
-        {
-            return new ScreenDto(
-                screen.Id, screen.Name, screen.Slug,
-                Enum.Parse<DefaultContentType>(screen.DefaultContentType),
-                screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
-                new List<TileDto>()
-            );
-        }
+        var ownTiles = await ResolveTiles(screen.Tiles, activeOnly);
+        var inheritedTiles = parent != null
+            ? await ResolveTiles(parent.Tiles, activeOnly)
+            : new List<TileDto>();
+
+        return new ScreenDto(
+            screen.Id, screen.Name, screen.Slug,
+            Enum.Parse<DefaultContentType>(screen.DefaultContentType),
+            screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
+            screen.ParentScreenId, parent?.Name,
+            ownTiles, inheritedTiles
+        );
+    }
+
+    private async Task<List<TileDto>> ResolveTiles(List<MongoScreenTile> screenTiles, bool activeOnly)
+    {
+        var tileIds = screenTiles.Select(t => t.TileId).ToList();
+        if (tileIds.Count == 0) return new List<TileDto>();
 
         var tileFilter = Builders<MongoTile>.Filter.In(t => t.Id, tileIds);
         if (activeOnly)
@@ -140,7 +176,7 @@ public class MongoScreenService : IScreenService
                 .ToDictionary(c => c.Id)
             : new Dictionary<int, MongoCategory>();
 
-        var tileDtos = screen.Tiles
+        return screenTiles
             .Where(st => tileMap.ContainsKey(st.TileId))
             .Select(st =>
             {
@@ -155,22 +191,14 @@ public class MongoScreenService : IScreenService
                     t.ArticleBody,
                     st.SortOrderOverride ?? t.SortOrder,
                     t.IsActive,
-                    t.ActiveFrom,
-                    t.ActiveTo,
-                    t.NewsFrom,
-                    t.NewsTo,
+                    t.ActiveFrom, t.ActiveTo,
+                    t.NewsFrom, t.NewsTo,
                     t.ParentTileId,
                     t.CategoryId, catName
                 );
             })
             .OrderBy(t => t.SortOrder)
             .ToList();
-
-        return new ScreenDto(
-            screen.Id, screen.Name, screen.Slug,
-            Enum.Parse<DefaultContentType>(screen.DefaultContentType),
-            screen.DefaultContentData, screen.IdleTimeoutSeconds, screen.SlideshowIntervalSeconds, screen.IsActive,
-            tileDtos
-        );
     }
 }
+

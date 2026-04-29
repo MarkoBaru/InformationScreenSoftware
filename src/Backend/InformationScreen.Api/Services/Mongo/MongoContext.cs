@@ -135,6 +135,7 @@ public class MongoScreen
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public int? ParentScreenId { get; set; }
     public List<MongoScreenTile> Tiles { get; set; } = new();
 }
 

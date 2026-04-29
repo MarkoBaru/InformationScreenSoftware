@@ -292,6 +292,16 @@
   background: #fff5f5;
 }
 
+.btn--secondary {
+  background: #eef3ff;
+  color: #3a5cbf;
+  border-color: #c5d3f7;
+}
+
+.btn--secondary:hover {
+  background: #dde6ff;
+}
+
 .btn--small {
   padding: 6px 12px;
   font-size: 0.8rem;

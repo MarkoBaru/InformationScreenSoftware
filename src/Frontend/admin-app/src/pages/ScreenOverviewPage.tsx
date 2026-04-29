@@ -518,7 +518,8 @@ function ScreenSection({ screenSummary, allScreens, filterCategoryName }: { scre
 
   const { roots, orphans } = useMemo(() => {
     if (!screen) return { roots: [], orphans: [] }
-    return buildTree(screen.tiles)
+    const tiles = [...(screen.inheritedTiles ?? []), ...(screen.ownTiles ?? [])]
+    return buildTree(tiles)
   }, [screen])
 
   const groupedRoots = useMemo(() => {
@@ -534,8 +535,9 @@ function ScreenSection({ screenSummary, allScreens, filterCategoryName }: { scre
 
   const expandAll = () => {
     if (!screen) return
-    setExpanded(new Set(screen.tiles.filter(t =>
-      t.contentType === 'Folder' || screen.tiles.some(c => c.parentTileId === t.id)
+    const allTiles = [...(screen.inheritedTiles ?? []), ...(screen.ownTiles ?? [])]
+    setExpanded(new Set(allTiles.filter(t =>
+      t.contentType === 'Folder' || allTiles.some(c => c.parentTileId === t.id)
     ).map(t => t.id)))
   }
 

@@ -13,7 +13,10 @@ public record ScreenDto(
     int IdleTimeoutSeconds,
     int SlideshowIntervalSeconds,
     bool IsActive,
-    List<TileDto> Tiles
+    int? ParentScreenId,
+    string? ParentScreenName,
+    List<TileDto> OwnTiles,
+    List<TileDto> InheritedTiles
 );
 
 public record ScreenListDto(
@@ -23,7 +26,10 @@ public record ScreenListDto(
     DefaultContentType DefaultContentType,
     int IdleTimeoutSeconds,
     bool IsActive,
-    int TileCount
+    int TileCount,
+    int? ParentScreenId,
+    string? ParentScreenName,
+    int ChildCount
 );
 
 public record CreateScreenRequest(
@@ -32,6 +38,7 @@ public record CreateScreenRequest(
     DefaultContentType DefaultContentType,
     string? DefaultContentData,
     int IdleTimeoutSeconds,
+    int? ParentScreenId = null,
     int SlideshowIntervalSeconds = 10
 );
 
@@ -41,6 +48,7 @@ public record UpdateScreenRequest(
     DefaultContentType DefaultContentType,
     string? DefaultContentData,
     int IdleTimeoutSeconds,
+    int? ParentScreenId = null,
     int SlideshowIntervalSeconds = 10,
     bool IsActive = true
 );

@@ -21,6 +21,12 @@ export default function ScreensPage() {
   const [dupSlug, setDupSlug] = useState('')
   const [dupSaving, setDupSaving] = useState(false)
 
+  // Child screen dialog state
+  const [childParent, setChildParent] = useState<ScreenList | null>(null)
+  const [childName, setChildName] = useState('')
+  const [childSlug, setChildSlug] = useState('')
+  const [childSaving, setChildSaving] = useState(false)
+
   useEffect(() => {
     screensApi.list().then(setScreens).catch(() => {})
     tilesApi.list().then(setTiles).catch(() => {})
@@ -64,10 +70,11 @@ export default function ScreensPage() {
         defaultContentData: original.defaultContentData ?? undefined,
         idleTimeoutSeconds: original.idleTimeoutSeconds,
       })
-      if (original.tiles.length > 0) {
+      const ownTiles = original.ownTiles ?? []
+      if (ownTiles.length > 0) {
         await screensApi.updateTiles(
           created.id,
-          original.tiles.map((t, i) => ({ tileId: t.id, sortOrderOverride: i }))
+          ownTiles.map((t, i) => ({ tileId: t.id, sortOrderOverride: i }))
         )
       }
       setDupSource(null)
@@ -77,6 +84,34 @@ export default function ScreensPage() {
       alert('Fehler beim Duplizieren: ' + (err as Error).message)
     } finally {
       setDupSaving(false)
+    }
+  }
+
+  const openCreateChild = (parent: ScreenList) => {
+    const defaultName = `${parent.name} – Filiale`
+    setChildParent(parent)
+    setChildName(defaultName)
+    setChildSlug(slugify(defaultName))
+  }
+
+  const handleCreateChild = async () => {
+    if (!childParent || !childName.trim() || !childSlug.trim()) return
+    setChildSaving(true)
+    try {
+      await screensApi.create({
+        name: childName.trim(),
+        slug: childSlug.trim(),
+        defaultContentType: 'None',
+        idleTimeoutSeconds: childParent.idleTimeoutSeconds,
+        parentScreenId: childParent.id,
+      })
+      setChildParent(null)
+      const updated = await screensApi.list()
+      setScreens(updated)
+    } catch (err) {
+      alert('Fehler beim Erstellen: ' + (err as Error).message)
+    } finally {
+      setChildSaving(false)
     }
   }
 
@@ -134,15 +169,28 @@ export default function ScreensPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th><th>Slug</th><th>Default-Content</th>
+              <th>Name</th><th>Slug</th><th>Parent / Kinder</th><th>Default-Content</th>
               <th>Idle (s)</th><th>Inhalte</th><th>Status</th><th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
             {filteredScreens.map((s) => (
-              <tr key={s.id}>
-                <td><Link to={`/screens/${s.id}`}>{s.name}</Link></td>
+              <tr key={s.id} style={s.parentScreenId ? { background: '#fafbff' } : undefined}>
+                <td>
+                  <Link to={`/screens/${s.id}`}>
+                    {s.parentScreenId && <span style={{ marginRight: 6, opacity: 0.5 }}>↳</span>}
+                    {s.name}
+                  </Link>
+                </td>
                 <td><code>{s.slug}</code></td>
+                <td style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {s.parentScreenId
+                    ? <span title={`Parent: ${s.parentScreenName}`}>Child von <strong>{s.parentScreenName}</strong></span>
+                    : s.childCount > 0
+                      ? <span>{s.childCount} Child{s.childCount > 1 ? 's' : ''}</span>
+                      : <span style={{ opacity: 0.4 }}>—</span>
+                  }
+                </td>
                 <td>{s.defaultContentType}</td>
                 <td>{s.idleTimeoutSeconds}</td>
                 <td>{s.tileCount}</td>
@@ -157,6 +205,9 @@ export default function ScreensPage() {
                     {user?.role === 'Admin' && (
                       <>
                         <button className="btn btn--small" onClick={() => navigate(`/screens/${s.id}`)}>Bearbeiten</button>
+                        {!s.parentScreenId && (
+                          <button className="btn btn--small btn--secondary" onClick={() => openCreateChild(s)}>+ Child</button>
+                        )}
                         <button className="btn btn--small" onClick={() => openDuplicate(s)}>Duplizieren</button>
                         <button className="btn btn--small btn--danger" onClick={() => handleDelete(s.id, s.name)}>Löschen</button>
                       </>
@@ -208,6 +259,53 @@ export default function ScreensPage() {
                   disabled={dupSaving || !dupName.trim() || !dupSlug.trim()}
                 >
                   {dupSaving ? 'Wird erstellt...' : 'Duplizieren'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {childParent && (
+        <div className="media-picker-overlay" onClick={() => !childSaving && setChildParent(null)}>
+          <div className="media-picker" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="media-picker__header">
+              <h3>Child-Screen erstellen</h3>
+              <button type="button" className="btn btn--small" onClick={() => setChildParent(null)} disabled={childSaving}>Schließen</button>
+            </div>
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>
+                Erstellt einen neuen Screen, der alle Inhalte von <strong>{childParent.name}</strong> erbt.
+                Änderungen am Parent werden automatisch übernommen.
+              </p>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Name</label>
+                <input
+                  value={childName}
+                  onChange={(e) => { setChildName(e.target.value); setChildSlug(slugify(e.target.value)) }}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Slug (URL)</label>
+                <input
+                  value={childSlug}
+                  onChange={(e) => setChildSlug(e.target.value)}
+                  required
+                  pattern="[-a-z0-9]+"
+                />
+                <p className="hint">Kiosk-URL: /kiosk/{childSlug}</p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn" onClick={() => setChildParent(null)} disabled={childSaving}>Abbrechen</button>
+                <button
+                  type="button"
+                  className="btn btn--primary"
+                  onClick={handleCreateChild}
+                  disabled={childSaving || !childName.trim() || !childSlug.trim()}
+                >
+                  {childSaving ? 'Wird erstellt...' : 'Child erstellen'}
                 </button>
               </div>
             </div>
